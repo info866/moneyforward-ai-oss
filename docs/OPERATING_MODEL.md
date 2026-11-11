@@ -1,15 +1,15 @@
-# Operating model — private OSS staging
+# Operating model — public OSS developer preview
 
 ## Scope of this repository
 
-This is the **future distribution codebase**, not the operational accounting system. It begins with a clean, new Git history. Source is added only after it is proven safe to disclose. The candidate now contains selected company-neutral first-party implementation and offline tests; no production data, source Git history or deployment is included.
+This is the **public developer distribution codebase**, not the operational accounting system. It begins with a clean, new Git history. Source is added only after it is proven safe to disclose. The candidate now contains selected company-neutral first-party implementation and offline tests; no production data, source Git history or deployment is included.
 
 ### Two separate environments
 
 | Environment | Responsibility | Prohibited exchange |
 | --- | --- | --- |
 | Private production code and connected Money Forward account | Real journal entry, source verification, run state, company-specific rules, production read-back | Never copy its data, credentials, tenant-specific configuration, local SQLite database, run logs, historical Git objects, or customer documents into this repository |
-| This private OSS staging repository | Portable code, neutral docs, synthetic fixtures, test harness, external contribution review | Never connect automatically to a production account or automatically deploy contributed code |
+| This public OSS developer-preview repository | Portable code, neutral docs, synthetic fixtures, test harness, external contribution review | Never connect automatically to a production account or automatically deploy contributed code |
 
 No runtime imports, write-back sync, cross-repository mirroring, or hidden credential dependencies are permitted.
 
@@ -50,4 +50,4 @@ For any metric, preserve the denominator, time window, environment, and evidence
 
 ## Operations and publication
 
-**Private by default.** The repository owner must authorize public visibility separately, after all source-publication [release gates](RELEASE_GATES.md) pass for the declared developer-preview scope. Live activation additionally requires [production gates](PRODUCTION_GATES.md), which remain unfulfilled. The staging branch and README do not themselves authorize publication.
+**Public source developer preview since 2026-11-11.** The owner authorized the exact visibility change after the source-publication [release gates](RELEASE_GATES.md) passed. Live activation additionally requires [production gates](PRODUCTION_GATES.md), which remain unfulfilled. GitHub Releases, live deployments and further outward disclosures require independent authorization.

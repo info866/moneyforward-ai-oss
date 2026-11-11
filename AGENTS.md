@@ -1,6 +1,6 @@
-# AGENTS.md — Money Forward AI OSS staging
+# AGENTS.md — Money Forward AI OSS public developer preview
 
-This repository is an independent, **PRIVATE** release candidate. It is not the production system. These instructions apply to coding agents (Codex, Claude Code, and others) working on this repository.
+This repository is an independent, **PUBLIC source-only developer preview**. It is not the production system. These instructions apply to coding agents (Codex, Claude Code, and others) working on this repository.
 
 ## Goal
 
@@ -8,7 +8,7 @@ Build a Money Forward-specific accounting automation project with testable end-t
 
 ## Mandatory boundaries
 
-- **Never switch the repository to Public or create a release without separate explicit owner approval.**
+- **Do not change repository visibility, create a GitHub Release, publish new integrations or run live accounting without separate explicit owner approval.**
 - Never import, copy, publish, or mirror any production repository Git history, live database, company-specific configuration, account/employee records, credentials, logs, or raw provider responses.
 - Use only individually reviewed, generic code and synthetic-from-origin fixtures. All imported code must have approved source rights and required attribution.
 - Do not run live accounting writes, payroll changes, approvals, payments, deletions, or filing tasks as part of OSS development. Real API read/write verification requires its own authorized, scoped task.
@@ -40,4 +40,4 @@ R1/R2 remain open and must never be labeled live-complete. This explicit scope
 correction enables review and contribution to unfinished software without
 pretending it is a finished autonomous accountant. Never claim source-readiness
 until a clean source archive, independent extraction, tests, disclosure checks
-and GitHub read-back pass. Public visibility still needs separate owner approval.
+and GitHub read-back pass. The owner explicitly authorized the Public transition on 2026-11-11; any future visibility, release or production transition needs its own authorization.

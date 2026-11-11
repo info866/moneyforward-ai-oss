@@ -5,12 +5,10 @@ The maintainer has no shared service holding contributors' credentials.
 
 ## Reporting
 
-Once this repository is public and private vulnerability reporting is enabled,
-use GitHub **Security → Report a vulnerability** (the repository's private
-advisory channel). The publication operator must enable and verify this channel
-as described in docs/PUBLICATION_CHECKLIST.md. While the repository is Private,
-access is limited to approved collaborators; the public-report feature is not
-claimed enabled. Do not open an issue with exploit details or real data. If the
+This repository is public, and GitHub private vulnerability reporting was
+enabled and read back on 2026-11-11. Use GitHub
+**Security → Report a vulnerability** (the repository's private advisory
+channel). Do not open an issue with exploit details or real data. If the
 private channel is unavailable, request that it be enabled with a non-sensitive
 message only; do not publish the vulnerability itself.
 

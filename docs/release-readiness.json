@@ -66,7 +66,13 @@
     "unresolved_source_blockers": [],
     "exact_final_commit_and_archive_receipt": "GitHub Issue #1 official read-back",
     "source_rights_basis": "Owner requested open-sourcing their owner-controlled first-party source; MIT notices retained; no external connector source imported.",
-    "production_certification_implied": false
+    "production_certification_implied": false,
+    "public_repository_visible": true,
+    "initial_public_commit": "a771c6c5d14170235c2c4d861aa5ec5c8e817087",
+    "private_vulnerability_reporting_enabled": true,
+    "github_actions_enabled": false,
+    "authorization_does_not_extend_to_generated_company_checkouts": true,
+    "upstream_original_public_visibility_authorized": true
   },
   "production_activation": {
     "status": "BLOCKED",
@@ -128,8 +134,12 @@
     }
   ],
   "publication_pending_actions": [
-    "Owner approval of exact Public visibility change",
-    "Enable and verify private vulnerability reporting on the public repository at transition",
-    "Final same-commit surface read-back before publication"
-  ]
+    "No GitHub Release has been authorized or created",
+    "Official partner inquiry requires truthful contact fields and owner disclosure authorization",
+    "Production activation still requires independent live R1/R2 evidence"
+  ],
+  "public_published_date": "2026-11-11",
+  "visibility_scope": "default_for_generated_company_checkouts",
+  "source_repository_visibility": "public",
+  "source_repository_url": "https://github.com/info866/moneyforward-ai-oss"
 }

@@ -17,8 +17,8 @@ Two independent answers must always be reported:
    source-to-journal/voucher/read-back/audit workflow, recovery, and zero duplicate
    mutations. This remains **NOT VERIFIED / BLOCKED**.
 
-The owner must still explicitly authorize the separate Public visibility change.
-"Prepared for public source review" is not "already public" or a production release.
+The owner authorized the Public visibility change on 2026-11-11, and the repository
+is now public. This does not mean production activation or a GitHub Release was approved.
 
 ## What contributors receive
 

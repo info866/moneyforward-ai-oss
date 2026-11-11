@@ -78,6 +78,11 @@ def test_generated_copy_includes_examples_and_machine_release_gates(tmp_path):
         assert (dest / name).read_bytes() == (ROOT / name).read_bytes()
     readiness = json.loads((dest / "docs/release-readiness.json").read_text())
     assert readiness["publication_authorized"] is False
+    assert readiness["visibility"] == "private"
+    assert readiness["source_repository_visibility"] == "public"
+    assert readiness["source_publication"]["public_repository_visible"] is True
+    assert readiness["source_publication"]["upstream_original_public_visibility_authorized"] is True
+    assert readiness["source_publication"]["authorization_does_not_extend_to_generated_company_checkouts"] is True
     assert readiness["production_activation"]["status"] == "BLOCKED"
     assert readiness["production_activation"]["live_e2e_verified"] is False
     assert readiness["source_publication"]["public_visibility_authorized"] is False

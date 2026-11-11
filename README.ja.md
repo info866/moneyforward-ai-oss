@@ -4,7 +4,7 @@
 
 **開発者の参加を募集：** [参加ガイド（日英）](docs/CONTRIBUTOR_START.md) · [改善に参加できるIssue](https://github.com/info866/moneyforward-ai-oss/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) · [75秒デモの構成](docs/DEMO_WALKTHROUGH.md)
 
-**0.1.0a2・開発者向けプレビュー。現在は非公開、公開操作は所有者承認待ち。**
+**0.1.0a2・Public公開済みの開発者向けプレビュー。改善PR・技術レビューを歓迎します。**
 Money Forward専用の会計自動化コードを、利用者自身の環境で検証・改良するためのプロジェクトです。Money Forward株式会社の公式製品ではなく、完全自律の本番会計や決算完了を保証する製品でもありません。
 
 ## 何を改善するのか
@@ -45,4 +45,4 @@ python examples/accounting_pipeline_demo.py
 ライセンスは[MIT](LICENSE)。各利用者が自分のAPI利用条件・製品権限を守って利用します。GitHub Actions、本番への自動配備、共有認証は使用しません。
 
 
-本人のプロフィールを公開しないGitHubの技術窓口については [MAINTAINERS](MAINTAINERS.md) を参照してください。正式な公開・外部告知はまだ行っていません。
+本人のプロフィールを公開しないGitHubの技術窓口については [MAINTAINERS](MAINTAINERS.md) を参照してください。GitHubリポジトリは公開済みです。Money Forward公式の認定・提携・紹介を受けたことは示していません。

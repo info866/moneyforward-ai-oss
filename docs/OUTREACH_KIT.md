@@ -1,6 +1,6 @@
 # Contributor outreach kit — project-only identity
 
-**Status: prepared for a later Public launch; no application, post, email or event registration has been sent.**
+**Status: repository Public since 2026-11-11; technical outreach materials prepared. No official partner application, external post, email or event registration is claimed until confirmed separately.**
 
 ## Identity and privacy
 
@@ -20,7 +20,7 @@ An unofficial **Money Forward-specific** accounting automation OSS developer pre
 
 ### X / Threads — Japanese
 
-Money ForwardのAI自動会計を、安全で再現可能なOSSとして改善したい。非公式の開発者向けプレビューを公開準備中です。仕訳の金額/税額検証、通信断後の二重登録防止、再開・公式読戻しの実装と合成テストを収録。未完成の実API連携も正直に公開します。Python/MCP/会計API開発者から、再現できる改善PRを募集中。公開後のGitHub: https://github.com/info866/moneyforward-ai-oss #Python #MoneyForward #OSS #MCP
+Money ForwardのAI自動会計を、安全で再現可能なOSSとして改善したい。非公式の開発者向けプレビューをGitHubで公開しました。仕訳の金額/税額検証、通信断後の二重登録防止、再開・公式読戻しの実装と合成テストを収録。未完成の実API連携も正直に公開します。Python/MCP/会計API開発者から、再現できる改善PRを募集中。GitHub: https://github.com/info866/moneyforward-ai-oss #Python #MoneyForward #OSS #MCP
 
 ### Short technical post for Zenn / Qiita — Japanese
 
@@ -36,7 +36,7 @@ Money Forward専用の非公式OSSを開発しています。仕訳APIのPOSTが
 
 We are building a Money Forward-specific Python accounting automation project. The tricky part is not exposing endpoints: it's proving that journal lines, tax splits, durable intents and official GET read-back all agree—even after a timeout following a commit. This preview has deterministic synthetic scenarios and a no-blind-retry path. It is **not** a production-certified unattended accountant. Looking for code review and focused contributions on source provenance, vouchers and safe replay.
 
-Repo after launch: https://github.com/info866/moneyforward-ai-oss. Please follow each community's self-promotion and posting rules; don't cross-post repetitive promotional messages.
+Public repository: https://github.com/info866/moneyforward-ai-oss. Please follow each community's self-promotion and posting rules; don't cross-post repetitive promotional messages.
 
 ## Official Money Forward AI-agent partner inquiry
 
@@ -48,7 +48,7 @@ The current required Google Form asks for company name, company website, named c
 
 > Money Forward専用の非公式Python OSSを準備しています。AIが経理業務を進める際の、事業所境界、仕訳・税区分の正確な照合、結果不明POSTの安全な復旧、同一runの再開を重視しています。合成テストと再現できる開発者向けコードは整備済みです。実APIの本番E2Eは未検証であり、技術レビュー、対応API仕様、開発者コミュニティへの適切な紹介経路についてご相談したいと考えています。
 
-If a public launch is not yet approved, do not give the partner programme a private GitHub URL as though it were accessible.
+The repository is now public and can be cited truthfully; do not claim its live accounting functions or partner status are certified.
 
 ## Targeted outreach sequence (one high-value post per community)
 
@@ -62,4 +62,4 @@ If a public launch is not yet approved, do not give the partner programme a priv
 
 Verified new contributors, independently reproduced defects, reviewable PRs, merged fixes without regression, and **actual live acceptance evidence if explicitly authorized**. Watchers, impressions and Stars are only discovery signals, not system quality. A merged PR is not a production deployment.
 
-Until Public approval the only permitted actions are private preparation, synthetic testing and safe GitHub metadata updates. The maintainer can delegate writing, technical triage and copy editing to AI, but external platform identities and account-based consents cannot be fabricated.
+After the authorized Public transition, public source discussion and bounded technical outreach are permitted; external accounts, identity disclosures and legal consents still require appropriate authorization. The maintainer can delegate writing, technical triage and copy editing to AI, but external platform identities and account-based consents cannot be fabricated.

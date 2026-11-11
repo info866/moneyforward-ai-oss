@@ -1,5 +1,7 @@
 # Source publication gates — development preview
 
+**Public source published 2026-11-11 following owner approval, official read-back, and private-vulnerability-reporting enablement.** Production acceptance remains blocked and GitHub Release creation is not implied.
+
 Scope: **0.1.0a2 developer preview**, not production-certified autonomous accounting.
 See PUBLIC_RELEASE_SCOPE.md for the explicit correction to the earlier conflated
 publication policy. The original gates are preserved in PRODUCTION_GATES.md.

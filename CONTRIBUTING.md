@@ -1,6 +1,6 @@
-# Contributing (pre-release)
+# Contributing — public developer preview
 
-This developer-preview repository is prepared for external contributions; it remains Private until the owner authorizes publication. Money Forward users can then contribute improvements tested with synthetic fixtures and, where separately authorized, their own accounts. Source contributions do not require production certification of the whole product.
+This is a **public developer preview** welcoming reproducible technical contributions. Money Forward users can contribute improvements tested with synthetic fixtures and, where separately authorized, their own accounts. Source contributions do not require production certification of the whole product.
 
 If this is your first contribution, read [the five-command quickstart and issue guide](docs/CONTRIBUTOR_START.md). We welcome reproducible, focused fixes from experienced Python/MCP/accounting engineers; do not assume a real provider account is required for initial tests.
 
@@ -18,7 +18,7 @@ If this is your first contribution, read [the five-command quickstart and issue 
 
 Review requires observable operational improvement, no regression to safe write/resume/tenant isolation guarantees, independent source review, and evidence from reproducible tests. The maintainer decides whether to merge. A merge does **not** automatically deploy to any user's production Money Forward instance.
 
-There is no GitHub Actions workflow in this staging repository. Tests must be executable locally and may later use an existing authorized, non-Actions verification route.
+There is no GitHub Actions workflow in this public developer-preview repository. Tests must be executable locally and may later use an existing authorized, non-Actions verification route.
 
 ## Reproducible local verification
 

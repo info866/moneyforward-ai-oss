@@ -1,5 +1,7 @@
 # Publication operator checklist
 
+**Historical procedure:** Public visibility was approved and completed on 2026-11-11. The repository remains an unofficial developer preview; it has not been deployed for production accounting or released as a certified product. Re-run these steps for future scope/visibility changes.
+
 This document does not authorize a Public change or production deployment.
 
 1. Obtain the owner's explicit authorization for the exact source commit and
