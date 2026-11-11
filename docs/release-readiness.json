@@ -3,7 +3,7 @@
   "checked_date": "2026-11-11",
   "visibility": "private",
   "publication_authorized": false,
-  "release_decision": "VALIDATION_IN_PROGRESS",
+  "release_decision": "READY_FOR_PUBLIC_DEVELOPER_PREVIEW",
   "privacy_screening": {
     "status": "PASS_WITH_SCOPE_LIMITS",
     "original_identifying_history_excluded": true,
@@ -25,38 +25,6 @@
     "dependency_inventory": true,
     "workflow_examples": true
   },
-  "verified": {
-    "baseline_offline_tests": 307,
-    "candidate_offline_tests": 324,
-    "ruff": "PASS",
-    "clean_editable_install": "PASS",
-    "cli_help": "PASS",
-    "local_dependency_audit": "PASS",
-    "live_moneyforward_writes": 0,
-    "production_changes": 0,
-    "github_actions_runs": 0,
-    "current_candidate_files": 133
-  },
-  "remaining_blockers": [
-    {
-      "id": "R1",
-      "area": "complete-independent-runtime",
-      "status": "OPEN",
-      "description": "Opt-in portable DAILY local run/restart state is implemented and offline-tested. Full official source/journal/voucher read-back, Cross Audit, notification and external GAS dependencies still require completion; R1 is not closed."
-    },
-    {
-      "id": "R2",
-      "area": "business-acceptance",
-      "status": "OPEN",
-      "description": "Independent-user real API source-to-journal/evidence/read-back E2E, fault recovery and replay with zero additional writes are not verified. Mock tests do not waive this gate."
-    },
-    {
-      "id": "R3",
-      "area": "rights-and-final-approval",
-      "status": "OPEN",
-      "description": "Final owner approval of first-party source rights, MIT terms, provider contracts and exact public contents is required. No publication was authorized."
-    }
-  ],
   "limits": [
     "Automated patterns and focused source review cannot prove absence of every form of personal data.",
     "The owning GitHub handle and approved noreply metadata are intentionally visible if published.",
@@ -82,7 +50,7 @@
     "new_provider_write_tools": false,
     "github_actions_used": false,
     "live_e2e_verified": false,
-    "final_generated_and_remote_readback": "generated_verified_remote_readback_pending_in_issue_1",
+    "final_generated_and_remote_readback": "Verified; historical evidence in Issue #1",
     "generated_copy_tests": 358,
     "generated_copy_initial_commit_required": false,
     "generated_copy_new_venv_install": "PASS",
@@ -92,8 +60,13 @@
   },
   "source_publication": {
     "scope": "0.1.0a2-development-preview",
-    "status": "VALIDATION_IN_PROGRESS",
-    "public_visibility_authorized": false
+    "status": "READY_FOR_PUBLIC_DEVELOPER_PREVIEW",
+    "public_visibility_authorized": false,
+    "tested_code_commit": "2392a2ba7cd4a025e1a66c76a1d8342b91df53fb",
+    "unresolved_source_blockers": [],
+    "exact_final_commit_and_archive_receipt": "GitHub Issue #1 official read-back",
+    "source_rights_basis": "Owner requested open-sourcing their owner-controlled first-party source; MIT notices retained; no external connector source imported.",
+    "production_certification_implied": false
   },
   "production_activation": {
     "status": "BLOCKED",
@@ -103,5 +76,60 @@
       "R2"
     ],
     "original_gates": "docs/PRODUCTION_GATES.md"
-  }
+  },
+  "historical_verified": {
+    "baseline_offline_tests": 307,
+    "candidate_offline_tests": 324,
+    "ruff": "PASS",
+    "clean_editable_install": "PASS",
+    "cli_help": "PASS",
+    "local_dependency_audit": "PASS",
+    "live_moneyforward_writes": 0,
+    "production_changes": 0,
+    "github_actions_runs": 0,
+    "current_candidate_files": 133
+  },
+  "verified": {
+    "generated_company_copy_tests": 412,
+    "extracted_source_archive_tests": 412,
+    "github_retrieved_code_tests": 412,
+    "accounting_pipeline_tests": 28,
+    "actual_mcp_sdk_dispatch_tests": 3,
+    "real_mcp_sdk_version": "2.3.0",
+    "counts_are_not_additive_business_results": true,
+    "tests_skipped_or_xfailed": 0,
+    "ruff": "PASS",
+    "local_audit": "PASS",
+    "fresh_venv_install": "PASS",
+    "deterministic_archive_repeated_build": "BYTE_IDENTICAL",
+    "source_archive_manifest_verified": true,
+    "independent_review_blockers_remaining": 0,
+    "synthetic_journal_demo": {
+      "journals": 3,
+      "extra_replay_mutations": 0,
+      "live_api": false
+    },
+    "live_moneyforward_writes": 0,
+    "production_changes": 0,
+    "github_actions_runs": 0
+  },
+  "production_unresolved": [
+    {
+      "id": "R1",
+      "area": "complete-independent-runtime",
+      "status": "OPEN",
+      "description": "Opt-in portable DAILY local run/restart state is implemented and offline-tested. Full official source/journal/voucher read-back, Cross Audit, notification and external GAS dependencies still require completion; R1 is not closed."
+    },
+    {
+      "id": "R2",
+      "area": "business-acceptance",
+      "status": "OPEN",
+      "description": "Independent-user real API source-to-journal/evidence/read-back E2E, fault recovery and replay with zero additional writes are not verified. Mock tests do not waive this gate."
+    }
+  ],
+  "publication_pending_actions": [
+    "Owner approval of exact Public visibility change",
+    "Enable and verify private vulnerability reporting on the public repository at transition",
+    "Final same-commit surface read-back before publication"
+  ]
 }

@@ -6,25 +6,25 @@ publication policy. The original gates are preserved in PRODUCTION_GATES.md.
 
 ## Mandatory before declaring the source candidate ready
 
-- [ ] All reachable branches, tags, commits, author/committer metadata, source
+- [x] All reachable branches, tags, commits, author/committer metadata, source
   files, Issues/PRs/comments, assets and visible repository settings are screened.
-- [ ] Gitleaks and private identity denylist screening report no unresolved findings;
+- [x] Gitleaks and private identity denylist screening report no unresolved findings;
   focused independent review has no unresolved blocking disclosure finding.
-- [ ] No real office profile, evidence, payroll, journal data, secrets, original
+- [x] No real office profile, evidence, payroll, journal data, secrets, original
   private Git objects, webhook values or local path identity is distributed.
-- [ ] LICENSE is valid MIT text for owner-controlled first-party code; dependency
+- [x] LICENSE is valid MIT text for owner-controlled first-party code; dependency
   notices and actual tested versions are included. No unreviewed vendor code.
-- [ ] A clean source checkout AND an independently extracted source archive install
+- [x] A clean source checkout AND an independently extracted source archive install
   and pass core/cloud/accounting tests, static audit and executable examples.
-- [ ] The distribution is generated from one clean commit; repeated builds are
+- [x] The distribution is generated from one clean commit; repeated builds are
   byte-identical and every included file has a checked content hash.
-- [ ] README and feature matrix distinguish real source, synthetic verification,
+- [x] README and feature matrix distinguish real source, synthetic verification,
   supported interfaces, external prerequisites and unverified live operations.
-- [ ] Contribution/bug/feature/PR templates require safe reproduction and forbid
+- [x] Contribution/bug/feature/PR templates require safe reproduction and forbid
   uploading credentials or business/personal data.
-- [ ] Operational reports cannot silently send company data to the public OSS repo;
+- [x] Operational reports cannot silently send company data to the public OSS repo;
   no Actions, production deployment, hosted service or extra credentials are added.
-- [ ] The exact tested commit and read-back evidence are recorded in Issue #1.
+- [x] The exact tested commit and read-back evidence are recorded in Issue #1.
 
 ## Separate actions (not performed by a readiness check)
 
@@ -42,3 +42,5 @@ PRODUCTION_GATES.md remains binding. Neither a source release nor mock test
 success may waive it. SOURCE-READY is never LIVE-READY.
 
 The measured current decision is in release-readiness.json and Issue #1.
+
+検収根拠: [PUBLIC_READY_20261111.md](PUBLIC_READY_20261111.md) および同じ対象のIssue #1。新しい変更には再検査が必要です。
