@@ -275,14 +275,93 @@ def _fetch_all_journals(
     per_page: int = 100,
     max_pages: int = 100,
 ) -> list[dict]:
+    """Collect a complete, unambiguous journal inventory before writing a snapshot.
+
+    A page limit, malformed response, duplicate ID, or inconsistent API metadata
+    is NOT a valid shorter inventory. In particular, do not clear/rebuild RAG
+    patterns from a partial page sequence. No source values appear in errors.
+    """
+    if isinstance(per_page, bool) or not isinstance(per_page, int) or per_page < 1:
+        raise ValueError("journal snapshot per_page must be positive")
+    if isinstance(max_pages, bool) or not isinstance(max_pages, int) or max_pages < 1:
+        raise ValueError("journal snapshot max_pages must be positive")
+
     journals: list[dict] = []
+    seen_ids: set[str] = set()
+    expected_pages: int | None = None
+    expected_count: int | None = None
+    metadata_mode: bool | None = None
     for page in range(1, max_pages + 1):
-        payload = client.journals(office_id, start_date=start_date, end_date=end_date, page=page, per_page=per_page)
-        page_items = _extract_items(payload)
+        payload = client.journals(
+            office_id, start_date=start_date, end_date=end_date,
+            page=page, per_page=per_page,
+        )
+        if isinstance(payload, list):
+            page_items = payload
+            metadata = None
+        elif isinstance(payload, dict):
+            # Do not use _extract_items here: its generic fallback treats an
+            # unknown response wrapper as one business journal.
+            if "journals" in payload:
+                page_items = payload["journals"]
+            elif "data" in payload:
+                page_items = payload["data"]
+            else:
+                raise RuntimeError("Money Forward journal page is missing journals array")
+            metadata = payload.get("metadata")
+        else:
+            raise RuntimeError("Money Forward journal page has invalid response")
+
+        if not isinstance(page_items, list) or len(page_items) > per_page:
+            raise RuntimeError("Money Forward journal page has invalid rows or per_page")
+        has_metadata = metadata is not None
+        if metadata_mode is None:
+            metadata_mode = has_metadata
+        elif metadata_mode != has_metadata:
+            raise RuntimeError("Money Forward journal pagination metadata changed")
+        if has_metadata:
+            if not isinstance(metadata, dict) or set(("total_pages", "total_count")) - metadata.keys():
+                raise RuntimeError("Money Forward journal pagination metadata missing")
+            total_pages = metadata["total_pages"]
+            total_count = metadata["total_count"]
+            if any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+                for value in (total_pages, total_count)
+            ):
+                raise RuntimeError("Money Forward journal pagination metadata invalid")
+            if total_pages == 0 and total_count != 0:
+                raise RuntimeError("Money Forward journal pagination metadata invalid")
+            if expected_pages is None:
+                expected_pages, expected_count = total_pages, total_count
+            elif (total_pages, total_count) != (expected_pages, expected_count):
+                raise RuntimeError("Money Forward journal pagination metadata changed")
+            if page > total_pages and total_pages != 0:
+                raise RuntimeError("Money Forward journal pagination exceeded declared total_pages")
+
+        for item in page_items:
+            if not isinstance(item, dict):
+                raise RuntimeError("Money Forward journal page contains invalid journal")
+            journal_id = _journal_id(item)
+            if not journal_id or not journal_id.strip():
+                raise RuntimeError("Money Forward journal page contains invalid journal ID")
+            if journal_id in seen_ids:
+                raise RuntimeError("Money Forward journal pagination contains duplicate journal ID")
+            seen_ids.add(journal_id)
         journals.extend(page_items)
-        if len(page_items) < per_page:
-            break
-    return journals
+
+        if metadata_mode:
+            if len(journals) > expected_count:
+                raise RuntimeError("Money Forward journal pagination total_count mismatch")
+            if page >= expected_pages:
+                if len(journals) != expected_count:
+                    raise RuntimeError("Money Forward journal pagination incomplete total_count")
+                return journals
+            if not page_items:
+                raise RuntimeError("Money Forward journal pagination incomplete empty page")
+        elif len(page_items) < per_page:
+            return journals
+
+    raise RuntimeError("Money Forward journal pagination exceeded the page limit; snapshot incomplete")
 
 
 def _clear_journal_pattern_snapshot(conn: sqlite3.Connection) -> None:
