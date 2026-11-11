@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "configured": false,
+  "slug": "example",
+  "legal_name": "REPLACE_ME_LEGAL_NAME",
+  "display_name": "REPLACE_ME_DISPLAY_NAME",
+  "moneyforward": {
+    "expected_office_names": ["REPLACE_ME_LEGAL_NAME"],
+    "keychain_service": "moneyforward-example-automation",
+    "db_path": "data/phase12/offices/example/moneyforward_phase12.sqlite"
+  },
+  "google_workspace": {
+    "account": "REPLACE_ME_ACCOUNTING_PRINCIPAL"
+  },
+  "google_drive": {
+    "account": "REPLACE_ME_DRIVE_ADMIN_PRINCIPAL",
+    "display_root_name": "REPLACE_ME_EVIDENCE_ROOT_NAME",
+    "evidence_root_id": "REPLACE_ME_EVIDENCE_ROOT",
+    "evidence_source_folder_ids": ["REPLACE_ME_EVIDENCE_ROOT"],
+    "processed_folder_id": "REPLACE_ME_PROCESSED_FOLDER",
+    "temporary_ocr_folder_id": "REPLACE_ME_TEMPORARY_OCR_FOLDER"
+  },
+  "accounting_rules": {}
+}

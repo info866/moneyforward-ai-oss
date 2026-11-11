@@ -1,0 +1,25 @@
+{
+  "interface": {
+    "displayName": "Company Money Forward Operations",
+    "shortDescription": "仕訳・給与・月次監査の単一受付",
+    "longDescription": "指定法人のみの会計受付。ChatGPTが判断し、認可済みの法人固有MCP/APIで取得・公式照合する。未接続の外部書込・通知は実行済みとしない。",
+    "developerName": "Company accounting operator",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "新着の売上・支払請求書・領収書・銀行・カードを業務別runで確認し、登録済みなら再登録せず公式read-backを行ってください。",
+      "指定期間の給与と賞与を原本と照合し、確定済みの対象だけを処理してください。",
+      "指定期間の月次監査をread-onlyで実行し、根拠と未完了事項を報告してください。"
+    ]
+  },
+  "name": "mf-company-operations",
+  "version": "1.0.0",
+  "description": "Single accounting router for one independently configured Money Forward company.",
+  "author": {
+    "name": "Company accounting operator"
+  },
+  "keywords": [],
+  "skills": "./skills"
+}

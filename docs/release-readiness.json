@@ -1,0 +1,68 @@
+{
+  "schema": "oss-release-readiness-v1",
+  "checked_date": "2026-11-11",
+  "visibility": "private",
+  "publication_authorized": false,
+  "release_decision": "BLOCKED",
+  "privacy_screening": {
+    "status": "PASS_WITH_SCOPE_LIMITS",
+    "original_identifying_history_excluded": true,
+    "source_history_imported": false,
+    "git_author_policy": "pseudonymous name and GitHub noreply",
+    "real_company_fixture_values_detected": false,
+    "secret_scanner": "gitleaks 8.30.1",
+    "source_identity_denylist_matches": 0,
+    "absolute_absence_guaranteed": false
+  },
+  "materials": {
+    "accounting_source": true,
+    "schema": true,
+    "company_bootstrap": true,
+    "synthetic_tests": true,
+    "install_instructions": true,
+    "contribution_docs": true,
+    "license_text": "MIT",
+    "dependency_inventory": true,
+    "workflow_examples": true
+  },
+  "verified": {
+    "baseline_offline_tests": 307,
+    "candidate_offline_tests": 324,
+    "ruff": "PASS",
+    "clean_editable_install": "PASS",
+    "cli_help": "PASS",
+    "local_dependency_audit": "PASS",
+    "live_moneyforward_writes": 0,
+    "production_changes": 0,
+    "github_actions_runs": 0,
+    "current_candidate_files": 133
+  },
+  "remaining_blockers": [
+    {
+      "id": "R1",
+      "area": "complete-independent-runtime",
+      "status": "OPEN",
+      "description": "Some source intake/classification requires a separately deployed GAS implementation; the bundled MCP is read-only and does not supply complete cloud run/write/audit/notification operations."
+    },
+    {
+      "id": "R2",
+      "area": "business-acceptance",
+      "status": "OPEN",
+      "description": "Independent-user real API source-to-journal/evidence/read-back E2E, fault recovery and replay with zero additional writes are not verified. Mock tests do not waive this gate."
+    },
+    {
+      "id": "R3",
+      "area": "rights-and-final-approval",
+      "status": "OPEN",
+      "description": "Final owner approval of first-party source rights, MIT terms, provider contracts and exact public contents is required. No publication was authorized."
+    }
+  ],
+  "limits": [
+    "Automated patterns and focused source review cannot prove absence of every form of personal data.",
+    "The owning GitHub handle and approved noreply metadata are intentionally visible if published.",
+    "Provider brand/API names and synthetic reserved-domain examples are not private company records.",
+    "The old identifying history remains in a separate private archived repository, never in this candidate.",
+    "The test environment is a fresh virtual environment on the same authorized Mac, not an independently operated company account.",
+    "Optional integrations and all supported OS/Python combinations are not fully acceptance-tested."
+  ]
+}
