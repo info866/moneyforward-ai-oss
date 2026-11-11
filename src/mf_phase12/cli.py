@@ -2642,13 +2642,24 @@ def _aggregate_run_artifact_path(run_id: str) -> Path:
 
 
 def _aggregate_implementation_head() -> str:
-    return subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=Path(__file__).resolve().parents[2],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
+    """Retain Git provenance where present; support independent fresh copies."""
+    root = Path(__file__).resolve().parents[2]
+    # Avoid discovering an unrelated parent checkout for source archives.
+    if (root / ".git").exists():
+        try:
+            head = subprocess.run(
+                ["git", "rev-parse", "--verify", "HEAD"], cwd=root,
+                check=True, capture_output=True, text=True, timeout=5,
+            ).stdout.strip()
+            if re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", head):
+                return head
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            # Bootstrap promises no initial commit is needed. A real content
+            # fingerprint keeps provenance rather than fabricating a Git SHA.
+            pass
+    from .hash_utils import source_tree_fingerprint
+
+    return source_tree_fingerprint(root)
 
 
 def _load_aggregate_run_artifact(path):

@@ -42,7 +42,7 @@
       "id": "R1",
       "area": "complete-independent-runtime",
       "status": "OPEN",
-      "description": "Some source intake/classification requires a separately deployed GAS implementation; the bundled MCP is read-only and does not supply complete cloud run/write/audit/notification operations."
+      "description": "Opt-in portable DAILY local run/restart state is implemented and offline-tested. Full official source/journal/voucher read-back, Cross Audit, notification and external GAS dependencies still require completion; R1 is not closed."
     },
     {
       "id": "R2",
@@ -64,5 +64,30 @@
     "The old identifying history remains in a separate private archived repository, never in this candidate.",
     "The test environment is a fresh virtual environment on the same authorized Mac, not an independently operated company account.",
     "Optional integrations and all supported OS/Python combinations are not fully acceptance-tested."
-  ]
+  ],
+  "resumption_20261111": {
+    "status": "IMPLEMENTED_AND_OFFLINE_TESTED_NOT_RELEASE_READY",
+    "baseline_generated_without_initial_commit": {
+      "passed": 322,
+      "failed": 2
+    },
+    "working_checkout_tests": 358,
+    "real_mcp_sdk": "2.3.0",
+    "real_sdk_dispatch_tests": 3,
+    "lost_response_recovery": "tested_across_two_processes_one_durable_run",
+    "local_db_is_authority": true,
+    "derived_cache_recoverable": true,
+    "source_scope": "one_daily_workflow_only_no_unimplemented_selectors",
+    "source_evidence": "caller_attestation_not_official_provider_readback",
+    "new_provider_write_tools": false,
+    "github_actions_used": false,
+    "live_e2e_verified": false,
+    "final_generated_and_remote_readback": "generated_verified_remote_readback_pending_in_issue_1",
+    "generated_copy_tests": 358,
+    "generated_copy_initial_commit_required": false,
+    "generated_copy_new_venv_install": "PASS",
+    "generated_real_sdk_tests": 3,
+    "generated_demo": "PASS_OFFLINE_SYNTHETIC_PROVIDER_OPERATIONS_ZERO",
+    "independent_targeted_review": "NO_NEW_BLOCKING_DEFECT_FOR_THIS_PATCH"
+  }
 }

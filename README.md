@@ -6,7 +6,7 @@
 
 ## What is present
 
-The repository contains existing first-party accounting code, SQLite schema, per-company profile/bootstrap, read-only onboarding MCP sample and offline regression tests. The tests cover source-to-journal decisions, evidence/read-back checks, workflow state, partial failure, tenant boundaries and replay safety using synthetic providers. Source existence and passing offline tests do not prove live provider behavior.
+The repository contains existing first-party accounting code, SQLite schema, per-company profile/bootstrap, provider-read-only MCP with opt-in local DAILY run metadata, and offline regression tests. The tests cover source-to-journal decisions, evidence/read-back checks, workflow state, partial failure, tenant boundaries and replay safety using synthetic providers. Source existence and passing offline tests do not prove live provider behavior.
 
 Each user must use their own authorized Money Forward account and locally kept credentials. No company identity, customer records, production secrets, private database or source repository history is included in the candidate tree.
 
@@ -20,6 +20,7 @@ python3 -m venv .venv
 python -m pip install -c constraints-test.txt -e '.[test]'
 make test
 make audit
+# Optional: install '.[cloud]' and run make test-cloud for real SDK dispatch.
 make run ARGS="--help"
 ```
 
@@ -29,17 +30,25 @@ make run ARGS="--help"
 
 | Area | Candidate status |
 | --- | --- |
-| Journal/evidence/tenant checks and local run state | Source and synthetic tests present |
+| Journal/evidence/tenant checks | Source and synthetic tests present |
+| Portable local DAILY run state and cache recovery | Opt-in; tested with synthetic bound databases; never certifies journals |
 | Duplicate/replay and partial-failure scenarios | Offline regression coverage; inspect test results |
 | Company-owned read-only API onboarding | Source present; real integration not certified here |
 | Five DAILY workflows from source intake to final delivery | Independent adopter live E2E still unverified |
 | Payroll/attendance UI operations and final calculation | Not certified or automatically configured |
 | Unattended cloud operation, decision learning, annual close/filing | Not established by this release candidate |
 
-The optional MCP is read-only and is not a replacement for a full authorized accounting connector. A passing source test, MCP listing or mock response is not a successful journal write.
+The optional MCP is provider-read-only by default. With explicit local-state opt-in it tracks pending work and exceptions using the existing company database, but it still cannot post or certify journals, execute Cross Audit, or send final notifications. It is not a replacement for a full authorized accounting connector. A passing source test, MCP listing or mock response is not a successful journal write.
 
 ## Contribution and release
 
 See [CONTRIBUTING](CONTRIBUTING.md), [AGENTS](AGENTS.md), [SECURITY](SECURITY.md), [operating model](docs/OPERATING_MODEL.md) and [release gates](docs/RELEASE_GATES.md). No GitHub Actions or automatic production deployment is used. Work on a branch; never copy real records or secrets into a PR. The repository stays private until the owner explicitly approves publication after every release blocker is resolved.
 
 MIT license text has been prepared in [LICENSE](LICENSE); the final source-rights and licensing decision remains an owner release gate. See [third-party notices](THIRD_PARTY_NOTICES.md).
+
+## Resuming interrupted preparation
+
+[Resume verification](docs/RESUME_20261111.md) records the independently reproduced
+bootstrap failures, the fixes, and the exact local-state versus accounting boundary.
+See [setup](docs/SETUP.md#optional-portable-local-daily-state) for the explicit opt-in.
+The public release gate remains blocked; this improvement is not live E2E evidence.

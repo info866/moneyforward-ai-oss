@@ -43,7 +43,7 @@ def test_bootstrap_preserves_license_and_public_documents(tmp_path):
     spec.loader.exec_module(module)
     dest = tmp_path / 'independent-copy'
     module.bootstrap('synthetic', dest)
-    for name in ['LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md', 'README.ja.md']:
+    for name in ['LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md', 'README.ja.md', 'constraints-cloud.txt']:
         assert (dest / name).read_bytes() == (ROOT / name).read_bytes()
 
 

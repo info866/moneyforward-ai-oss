@@ -32,7 +32,10 @@ def test_cloud_mcp_has_no_provider_write_tools_in_source():
     root = ast.parse(code)
     names = {node.name for node in root.body if isinstance(node, ast.FunctionDef)}
     assert {"get_office", "workflow_preflight", "run_status", "prepare_run_scope"}.issubset(names)
-    assert not {"create_journal", "run_begin", "final_google_chat_send", "delete_journal"} & names
+    assert not {"create_journal", "final_google_chat_send", "delete_journal"} & names
+    # Local run metadata is opt-in; this never adds a provider write operation.
+    assert {"run_begin", "run_resume"}.issubset(names)
+    assert "MF_CLOUD_LOCAL_WORKFLOW_ENABLED" in code
     assert "MF_CLOUD_ACCOUNTING_PROFILE" in code
 
 

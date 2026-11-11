@@ -108,3 +108,13 @@ approved ChatGPT connection, matching live office identity, supported
 per-workflow run/read-back/notification operations, synthetic tenant-isolation
 tests, and one authorized company-only live canary. Until verified, preserve
 the old operational route and mark cloud execution **not ready**.
+
+
+## Bundled local-state capability limit
+
+The portable MCP now has opt-in local DAILY manifests and exception tracking.
+`run_begin`/`run_resume` availability alone does **not** satisfy the activation
+contract above. The local backend does not create authoritative source read-backs,
+post or verify journals, perform Cross Audit, or send completion notifications.
+A local `REVIEW` or `NOT_APPLICABLE` is not completed accounting. Do not route
+ordinary business through this subset in place of a fully verified company backend.

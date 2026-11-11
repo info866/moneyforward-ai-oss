@@ -189,3 +189,68 @@ authorization; current per-operation identity, scope, and read-back gates remain
 Read [requirements](REQUIREMENTS.md), [specification](SPECIFICATION.md),
 and [operating gates](WORK_ORDER.md). No CI, scheduler, deployment, live
 write, or credential transfer is performed by bootstrap.
+
+
+## Optional portable local DAILY state
+
+This is a **partial, opt-in backend capability**, not a complete accounting
+connector. Keep the existing company-authorized production route unchanged.
+The same bundled MCP can expose local run state without a second service.
+
+Prerequisites: a complete source checkout, `pip install -e '.[cloud]'`, a locally
+configured profile, and an **already initialized and correctly bound** company
+database. Bootstrap and local metadata tools do not establish OAuth/office trust
+or initialize an absent database. Never copy a production DB into a test checkout.
+
+Set `MF_CLOUD_ACCOUNTING_PROFILE` to the absolute path of your local, ignored
+profile in this checkout's `config/offices` directory. Set
+`MF_CLOUD_LOCAL_WORKFLOW_ENABLED=1` only when local run-state mutation is intended.
+With this unset, the original provider-read-only/historical-status behavior remains.
+Use the existing approved host connection; setup does not deploy a new server.
+
+Local tools: `run_begin`, `run_status`, `run_resume`, `run_record_source_snapshot`,
+`run_record_item`. New DAILY runs require exactly one `selected_workflows` entry.
+The source snapshot is a caller-provided manifest, **not** official provider evidence.
+`REVIEW`, `NOT_READY`, `NOT_APPLICABLE`, auth waits and retries may be recorded;
+`VERIFIED` is rejected until an independently implemented official-read-back path exists.
+PAYROLL and MONTHLY_CLOSE are not implemented by this local-state subset.
+
+The existing SQLite audit log is authoritative for this subset. A stale, damaged
+or missing JSON cache is rebuilt from the same validated DB record. A failed
+transaction leaves the previous state intact. This does not resolve an unknown
+Money Forward write effect: such a run stays blocked for official reconciliation.
+No resumption path performs a provider write or sends a notification.
+
+`make test-cloud` requires the real installed MCP SDK and checks tool dispatch,
+argument validation and redacted failure reasons. It uses no network listener,
+real tenant credentials, or provider. It is distinct from a real ChatGPT-host
+connection test and real Money Forward E2E acceptance.
+
+Independent copies need `git init -b main` for local-data exclusion checks but do
+not need a dummy initial commit. Where no Git HEAD exists, implementation
+provenance uses `source-sha256:<digest>` over code and SQL only. Company settings,
+local files and credentials are not included. Provenance never grants permission.
+
+
+### Retry contract for local run creation
+
+Generate and retain an opaque `request_id` in the caller before the first
+`run_begin` request. Retry the **same** request ID with the same instruction,
+accounting date, mode and selected workflow after a lost response. It returns
+that one committed run; reusing the ID with different immutable inputs is rejected.
+Changing the request ID intentionally starts a different local run.
+Only `selected_workflows` is implemented in `source_scope`; narrower account,
+folder or period selectors are rejected rather than silently ignored.
+
+A source snapshot requires an explicit complete `coverage_hash` representing
+its facts/version/coverage, not merely stable document IDs. A change in the
+observed facts must change that hash. Local manifests remain caller attestations,
+not official read-back evidence. The backend cannot detect remote source changes
+without new observations supplied by the authorized source reader.
+
+
+The exact optional cloud acceptance environment is pinned with
+`python -m pip install -c constraints-cloud.txt -e '.[test,cloud]'`.
+Core-only development may continue using `constraints-test.txt` and `.[test]`.
+Optional real SDK tests skip explicitly without the cloud extra; `make test-cloud`
+instead fails if the real SDK is absent. Do not report a skipped check as passing.

@@ -62,3 +62,35 @@ def sha256_hash_variants(value: str) -> tuple[str, ...]:
     if normalized.startswith("sha256:") and _SHA256_RE.fullmatch(normalized.removeprefix("sha256:")):
         return (normalized, normalized.removeprefix("sha256:"))
     return (normalized,)
+
+
+def source_tree_fingerprint(root) -> str:
+    """Identify distributed implementation bytes without requiring Git history.
+
+    Only portable code/schema is read. Local company profiles, credentials,
+    runtime databases and absolute paths are never part of this identity.
+    This is provenance, not business authorization or an integrity signature.
+    """
+    from pathlib import Path
+
+    root = Path(root).resolve(strict=True)
+    entries = []
+    for directory, suffixes in (("src", {".py"}), ("sql", {".sql"}),
+                                ("mcp_servers", {".py"})):
+        base = root / directory
+        if base.is_symlink():
+            raise ValueError("implementation tree must not be symlinked")
+        if not base.is_dir():
+            continue
+        for path in sorted(base.rglob("*")):
+            if path.suffix not in suffixes or "__pycache__" in path.parts:
+                continue
+            if path.is_symlink() or any(parent.is_symlink()
+                                       for parent in path.parents if parent != root and root in parent.parents):
+                raise ValueError("implementation source must not be symlinked")
+            if path.is_file():
+                entries.append({"path": path.relative_to(root).as_posix(),
+                                "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+    if not entries:
+        raise ValueError("implementation source tree is missing")
+    return "source-sha256:" + stable_hash(entries)

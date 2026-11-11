@@ -68,3 +68,16 @@ remain unverified. No tests or documentation may silently mark these complete.
   `tests/test_chatgpt_cloud_contract.py`, then full `make test`/`make audit`.
 - No such local test establishes authorized run/write tools, company OAuth,
   browser-facing plugin installation or production Chat delivery.
+
+
+## Portable local-state addendum
+
+The optional MCP remains **provider-read-only**. An explicit opt-in may mutate
+local run metadata in the existing bound company database. Verify that default
+behavior rejects local mutation, that source/exception records cannot become
+`VERIFIED` through caller assertions, and that no journal, Cross Audit or
+notification tool is advertised as implemented by this subset.
+
+Run `make test-cloud` with the cloud extra installed, plus the full suite in a
+fresh generated copy after `git init` with no commit. Confirm local crash/cache
+recovery independently of provider recovery; all earlier live acceptance gates remain.

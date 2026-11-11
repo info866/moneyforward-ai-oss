@@ -13,7 +13,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = re.compile(r"[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*\Z")
-ROOT_FILES = ("README.md", "README.ja.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "constraints-test.txt", "AGENTS.md", "Makefile", "pyproject.toml", ".gitignore",
+ROOT_FILES = ("README.md", "README.ja.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "constraints-test.txt", "constraints-cloud.txt", "docs/release-readiness.json", "examples/README.md", "examples/portable_state_demo.py", "AGENTS.md", "Makefile", "pyproject.toml", ".gitignore",
               "integrations/company-operations/.codex-plugin/plugin.json")
 TREE_SUFFIXES = {
     "src": {".py"},

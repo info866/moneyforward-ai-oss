@@ -1,9 +1,8 @@
-"""Optional per-company read-only MCP for ChatGPT Cloud.
+"""Optional company MCP: official reads plus opt-in local workflow metadata.
 
-Requires installation of the cloud extra and an explicitly configured, bound
-local company profile. It never starts accounting writes, OAuth consent, a
-scheduler, or a second DB. The ChatGPT host must separately connect an
-approved, company-specific write/run bridge before production completion.
+Requires the cloud extra and a configured, existing, company-bound database.
+Local DAILY state is enabled with MF_CLOUD_LOCAL_WORKFLOW_ENABLED=1; it grants
+no provider writes, official accounting verification, Cross Audit or delivery.
 """
 from __future__ import annotations
 
@@ -19,13 +18,16 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 from datetime import date
 import re
 from mf_phase12.chatgpt_cloud_contract import (
-    execution_contract, requested_workflows, required_tools,
+    requested_workflows, required_tools,
 )
+from mf_phase12.chatgpt_contract import execution_contract
+from mf_phase12.workflow_bridge import WorkflowBridge
 from mf_phase12.office_profile import (
     load_office_profile, using_office_profile, require_database_office_identity,
 )
@@ -71,11 +73,11 @@ def _bound_read() -> Iterator[tuple[Any, Any]]:
 RO = ToolAnnotations(read_only_hint=True, destructive_hint=False,
                      idempotent_hint=True, open_world_hint=False)
 mcp = MCPServer(
-    "Company Money Forward (read-only)",
+    "Company Money Forward (provider-read-only)",
     instructions=(
         "ChatGPT orchestrates the selected company's accounting. Use this "
-        "connector only for official read operations and bound historical run "
-        "status. Do not claim it supplies journal posting, a new scoped run, "
+        "connector for official reads and opt-in portable local DAILY run state. "
+        "Local manifests are caller attestations. Do not claim journal posting, "
         "Cross Audit, or final Google Chat. Those operations require the "
         "company's existing approved run/write connector and authoritative "
         "read-back. Never switch to another company on an identity failure."
@@ -95,6 +97,9 @@ def get_capabilities() -> dict[str, Any]:
         "company_authentication": "not_probed",
         "write_capability": "not_provided",
         "run_completion_capability": "external_company_bridge_required",
+        "local_workflow_state_enabled": os.environ.get("MF_CLOUD_LOCAL_WORKFLOW_ENABLED") == "1",
+        "local_state_mutation_tools": ["run_begin", "run_status", "run_resume",
+                                       "run_record_source_snapshot", "run_record_item"],
         "chatgpt_host_sync": "not_observable_from_server",
     }
 
@@ -107,6 +112,9 @@ def workflow_preflight(mode: str, workflow: str | None = None) -> dict[str, Any]
         requested = [workflow] if workflow is not None else None
         selected = requested_workflows(mode, requested)
         available = set(mcp._tool_manager._tools)
+        if os.environ.get("MF_CLOUD_LOCAL_WORKFLOW_ENABLED") != "1":
+            available.difference_update({"run_begin", "run_resume",
+                                         "run_record_source_snapshot", "run_record_item"})
         operations = {
             name: {
                 "status": "available" if not missing else "needs_attention",
@@ -118,6 +126,10 @@ def workflow_preflight(mode: str, workflow: str | None = None) -> dict[str, Any]
         return {
             "mode": mode,
             "workflows": list(selected),
+            "local_run_state_only": True,
+            "local_run_modes": ["DAILY"],
+            "local_metadata_is_official_source_evidence": False,
+            "provider_write_capability": "not_provided",
             "operations": operations,
             "production_ready": False,
             "company_boundary": {
@@ -241,26 +253,94 @@ def get_trial_balance_pl(start_date: str, end_date: str) -> dict[str, Any]:
         )
 
 
-@mcp.tool(annotations=RO)
+# These tools change local metadata (including the company lock file), never
+# provider journals or notifications. Explicit opt-in preserves read-only default.
+LOCAL = ToolAnnotations(read_only_hint=False, destructive_hint=False,
+                        idempotent_hint=False, open_world_hint=False)
+
+
+def _local_bridge():
+    if os.environ.get("MF_CLOUD_LOCAL_WORKFLOW_ENABLED") != "1":
+        raise PermissionError("local workflow state is disabled; explicitly enable MF_CLOUD_LOCAL_WORKFLOW_ENABLED")
+    return WorkflowBridge(_load_profile())
+
+
+def _invoke_local(operation: str, *args: Any) -> dict[str, Any]:
+    """Preserve actionable *redacted* failures through real MCP SDK dispatch.
+
+    Plain ValueError/PermissionError becomes an opaque UnexpectedToolError in
+    the SDK. Do not return success-shaped JSON, nor expose arbitrary exception
+    messages that could contain a local profile path or company identity.
+    """
+    try:
+        return getattr(_local_bridge(), operation)(*args)
+    except (ValueError, PermissionError, sqlite3.Error, OSError, RuntimeError) as error:
+        message = str(error)
+        if isinstance(error, RuntimeError) and "another production aggregate run is executing" in message:
+            reason = "company_run_busy: retry the same retained request_id after the current local operation finishes"
+        elif "local workflow state is disabled" in message:
+            reason = "local_state_disabled: enable local workflow metadata explicitly; no provider writes are enabled"
+        elif "outside recorded run scope" in message or "workflow scope mismatch" in message:
+            reason = "workflow_outside_run_scope: use the workflow bound to this run"
+        elif "official reconciliation required" in message:
+            reason = "official_reconciliation_required: do not retry an uncertain provider write"
+        elif "VERIFIED unsupported" in message:
+            reason = "VERIFIED_requires_official_readback: local decisions cannot certify accounting completion"
+        elif "integrity" in message:
+            reason = "local_state_integrity_failed: inspect the existing bound ledger; do not reset it"
+        elif isinstance(error, sqlite3.OperationalError):
+            reason = "existing_company_database_required: configure and bind this company database before local run use"
+        elif isinstance(error, PermissionError):
+            reason = "company_boundary_not_verified: check this company's profile and existing database binding"
+        else:
+            reason = "local_run_request_rejected: verify required inputs, existing run, source snapshot and mode; no provider write occurred"
+        raise ToolError(reason) from None
+
+
+@mcp.tool(annotations=LOCAL)
+def run_begin(instruction: str, accounting_date: str, source_scope: dict[str, Any],
+              request_id: str, mode: str = "DAILY") -> dict[str, Any]:
+    """Opt-in LOCAL state mutation; one DAILY workflow, no provider writes."""
+    return _invoke_local("run_begin", instruction, accounting_date, source_scope, mode, request_id)
+
+
+@mcp.tool(annotations=LOCAL)
 def run_status(run_id: str) -> dict[str, Any]:
-    """Legacy per-company ledger read; NOT a new cloud-scoped run receipt."""
+    """Portable local run status; lock only, no live identity attestation."""
+    if os.environ.get("MF_CLOUD_LOCAL_WORKFLOW_ENABLED") == "1":
+        return _invoke_local("run_status", run_id)
+    # Preserve the original authenticated read-only historical ledger route.
     with _bound_read() as (profile, client):
-        path = profile.moneyforward_db_path
-        with sqlite3.connect(path.as_uri() + "?mode=ro", uri=True) as conn:
+        with sqlite3.connect(profile.moneyforward_db_path.as_uri() + "?mode=ro", uri=True) as conn:
             conn.row_factory = sqlite3.Row
-            require_database_office_identity(
-                conn, profile, client.office_identity_binding,
-            )
+            require_database_office_identity(conn, profile, client.office_identity_binding)
             status = build_run_status(conn, run_id)
-        return {
-            **status,
-            "company_boundary": {
-                "profile_slug": profile.slug,
-                "boundary_fingerprint": profile.boundary_fingerprint,
-            },
-            "authoritative_cloud_run_scope": False,
-            "write_or_completion_authorized": False,
-        }
+        return {**status, "company_boundary": {
+                    "profile_slug": profile.slug,
+                    "boundary_fingerprint": profile.boundary_fingerprint},
+                "authoritative_cloud_run_scope": False,
+                "write_or_completion_authorized": False}
+
+
+@mcp.tool(annotations=LOCAL)
+def run_resume(run_id: str) -> dict[str, Any]:
+    """Return pending work only; never execute or retry provider writes."""
+    return _invoke_local("run_resume", run_id)
+
+
+@mcp.tool(annotations=LOCAL)
+def run_record_source_snapshot(run_id: str, workflow: str,
+                               source_identity_hashes: list[str], coverage_hash: str) -> dict[str, Any]:
+    """Persist caller discovery attestation, not official source verification."""
+    return _invoke_local("run_record_source_snapshot", run_id, workflow, source_identity_hashes, coverage_hash)
+
+
+@mcp.tool(annotations=LOCAL)
+def run_record_item(run_id: str, workflow: str, source_identity_hash: str,
+                    state: str, decision: dict[str, Any], current_facts_hash: str) -> dict[str, Any]:
+    """Record local exception/decision. Accounting VERIFIED is unsupported."""
+    return _invoke_local("run_record_item", run_id, workflow, source_identity_hash,
+                         state, decision, current_facts_hash)
 
 
 if __name__ == "__main__":

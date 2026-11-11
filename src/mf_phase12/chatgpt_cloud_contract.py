@@ -96,6 +96,12 @@ def verify_run_scope(
         actual = tuple(returned.keys())
     elif isinstance(returned, list) and all(isinstance(w, str) for w in returned):
         actual = tuple(returned)
+    elif isinstance(returned, list) and all(
+        isinstance(w, Mapping) and isinstance(w.get("workflow"), str) for w in returned
+    ):
+        # The actual durable backend returns workflow records, not bare names.
+        # Only extract explicit names; the same exact-set/duplicate checks apply.
+        actual = tuple(w["workflow"] for w in returned)
     else:
         raise PermissionError("run scope is missing or ambiguous")
     if len(actual) != len(set(actual)) or set(actual) != set(selected):
