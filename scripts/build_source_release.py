@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
@@ -40,7 +41,7 @@ def safe_path(name: str) -> bool:
     path = PurePosixPath(name)
     forbidden = {'data', 'credentials', 'secrets', 'logs', 'exports',
                  'downloads', 'node_modules', '.git', '.venv', '__pycache__'}
-    return (bool(name) and '\\' not in name and ':' not in name and not path.is_absolute() and str(path) == name
+    return (bool(name) and bool(path.parts) and name != "." and '\\' not in name and ':' not in name and not path.is_absolute() and str(path) == name
             and not set(path.parts) & (forbidden | {'.', '..'})
             and not name.startswith('.github/workflows/')
             and not any(p.startswith('.env') or '.local.' in p for p in path.parts)
@@ -111,16 +112,29 @@ def build(root: Path, output: Path) -> dict:
 
 
 def verify(path: Path) -> dict:
+    if path.stat().st_size > MAX_TOTAL:
+        raise ValueError('compressed archive exceeds review limits')
+    compressed = path.read_bytes()
+    # Match the builder's privacy-neutral gzip header: no filename/comment/extra.
+    if compressed[:10] != bytes.fromhex('1f8b08000000000002ff'):
+        raise ValueError('noncanonical gzip metadata')
+    decoder = zlib.decompressobj(31)
+    limit = MAX_TOTAL + 8 * 1024 * 1024
+    tar_bytes = decoder.decompress(compressed, limit + 1)
+    if len(tar_bytes) > limit or not decoder.eof or decoder.unused_data:
+        raise ValueError('oversized, concatenated or trailing gzip stream')
     payloads, modes, total = {}, {}, 0
-    with tarfile.open(path, 'r:gz') as archive:
+    with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode='r:') as archive:
         for member in archive:
             if not member.isfile() or not safe_path(member.name) or member.name in payloads:
                 raise ValueError('unsafe or duplicate archive member')
-            if member.mode not in (0o644, 0o755) or member.uid != 0 or member.gid != 0 or member.uname or member.gname or member.mtime != 0:
+            if (member.mode not in (0o644, 0o755) or member.uid != 0 or member.gid != 0
+                    or member.uname or member.gname or member.mtime != 0
+                    or member.linkname or member.pax_headers or archive.pax_headers):
                 raise ValueError('unreviewed archive identity or mode metadata')
             modes[member.name] = member.mode
             total += member.size
-            if member.size > MAX_FILE or total > MAX_TOTAL:
+            if member.size > MAX_FILE or total > MAX_TOTAL or len(payloads) >= 5000:
                 raise ValueError('archive exceeds review limits')
             handle = archive.extractfile(member)
             if handle is None:
@@ -128,29 +142,58 @@ def verify(path: Path) -> dict:
             payloads[member.name] = handle.read(MAX_FILE + 1)
     if MANIFEST not in payloads:
         raise ValueError('missing release manifest')
-    manifest = json.loads(payloads.pop(MANIFEST))
-    if manifest.get('schema') != 'source-release-manifest-v1':
-        raise ValueError('unrecognized manifest schema')
-    if not re.fullmatch('[a-f0-9]{40,64}', manifest.get('commit', '')):
-        raise ValueError('invalid commit identifier')
-    if not re.fullmatch('[a-f0-9]{40,64}', manifest.get('tree', '')):
-        raise ValueError('invalid source tree identifier')
-    entries = manifest.get('files')
-    if not isinstance(entries, list):
+    manifest_raw = payloads.pop(MANIFEST)
+    if text_findings(manifest_raw.decode('utf-8'), MANIFEST):
+        raise ValueError('release manifest disclosure screening failed')
+    manifest = json.loads(manifest_raw)
+    if (not isinstance(manifest, dict) or set(manifest) !=
+            {'schema', 'commit', 'tree', 'evidence_level', 'files'} or
+            manifest.get('schema') != 'source-release-manifest-v1' or
+            manifest.get('evidence_level') != 'SOURCE_SNAPSHOT_NOT_LIVE_ACCEPTANCE'):
+        raise ValueError('unrecognized manifest schema or fields')
+    if canonical(manifest) != manifest_raw:
+        raise ValueError('noncanonical or duplicated JSON manifest fields')
+    for key in ('commit', 'tree'):
+        if not isinstance(manifest[key], str) or not re.fullmatch('(?:[a-f0-9]{40}|[a-f0-9]{64})', manifest[key]):
+            raise ValueError('invalid source identifier')
+    entries = manifest['files']
+    if not isinstance(entries, list) or not entries:
         raise ValueError('missing file inventory')
+    for item in entries:
+        if (not isinstance(item, dict) or set(item) != {'path', 'mode', 'bytes', 'sha256'}
+                or not isinstance(item['path'], str) or not safe_path(item['path'])
+                or type(item['bytes']) is not int or item['bytes'] < 0
+                or not isinstance(item['sha256'], str)
+                or not re.fullmatch('[a-f0-9]{64}', item['sha256'])):
+            raise ValueError('unapproved file manifest fields')
     names = [item['path'] for item in entries]
-    if len(names) != len(set(names)) or set(names) != set(payloads) or not REQUIRED <= set(names):
+    if (names != sorted(names) or len(names) != len(set(names))
+            or set(names) != set(payloads) or not REQUIRED <= set(names)):
         raise ValueError('manifest file set mismatch')
     for item in entries:
-        if item['mode'] not in {'100644', '100755'} or modes[item['path']] != int(item['mode'], 8) & 0o777:
+        if item['mode'] not in {'100644', '100755'} or modes[item['path']] != (int(item['mode'], 8) & 0o777):
             raise ValueError('source mode mismatch')
         raw = payloads[item['path']]
         if len(raw) != item['bytes'] or hashlib.sha256(raw).hexdigest() != item['sha256']:
             raise ValueError('source content checksum mismatch')
         if text_findings(raw.decode('utf-8'), item['path']):
             raise ValueError('archive disclosure screening failed')
+    # Rebuild the approved tar headers to reject unparsed padding, PAX, aliases,
+    # trailing files, regular-file link names or other unreviewed metadata.
+    expected_tar = io.BytesIO()
+    payloads[MANIFEST] = manifest_raw
+    with tarfile.open(fileobj=expected_tar, mode='w', format=tarfile.USTAR_FORMAT) as archive:
+        for name, data in sorted(payloads.items()):
+            member = tarfile.TarInfo(name)
+            member.size = len(data)
+            member.mode = modes[name]
+            member.uid = member.gid = member.mtime = 0
+            member.uname = member.gname = ''
+            archive.addfile(member, io.BytesIO(data))
+    if expected_tar.getvalue() != tar_bytes:
+        raise ValueError('noncanonical tar metadata or padding')
     return {'verified': True, 'commit': manifest['commit'], 'tree': manifest['tree'],
-            'files': len(entries), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+            'files': len(entries), 'sha256': hashlib.sha256(compressed).hexdigest(),
             'production_ready': False, 'provider_operations': 0}
 
 
@@ -163,7 +206,7 @@ def main() -> int:
     try:
         result = verify(args.verify) if args.verify else build(ROOT, args.output)
     except (ValueError, OSError, subprocess.CalledProcessError, UnicodeError,
-            KeyError, TypeError, tarfile.TarError) as error:
+            KeyError, TypeError, tarfile.TarError, zlib.error) as error:
         print(json.dumps({'verified': False, 'error_type': type(error).__name__,
                           'action': 'inspect local source; no publication occurred'}))
         return 1

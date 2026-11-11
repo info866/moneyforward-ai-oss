@@ -1,5 +1,7 @@
 """Source-package tests use only generated text and local Git repositories."""
 import importlib.util
+import gzip
+from contextlib import contextmanager
 import io
 import json
 from pathlib import Path
@@ -12,6 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('source_release', ROOT / 'scripts/build_source_release.py')
 release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
+
+
+@contextmanager
+def canonical_tar_writer(path, *, format=tarfile.USTAR_FORMAT, filename=''):
+    with path.open('wb') as handle:
+        with gzip.GzipFile(fileobj=handle, mode='wb', filename=filename, mtime=0) as gz:
+            with tarfile.open(fileobj=gz, mode='w', format=format) as archive:
+                yield archive
 
 
 def run(root, *args):
@@ -98,7 +108,7 @@ def test_changed_content_is_detected(source, tmp_path):
     original = tmp_path / 'original.tar.gz'
     release.build(source, original)
     corrupted = tmp_path / 'corrupted.tar.gz'
-    with tarfile.open(original) as src, tarfile.open(corrupted, 'w:gz') as out:
+    with tarfile.open(original) as src, canonical_tar_writer(corrupted) as out:
         for member in src:
             data = src.extractfile(member).read()
             if member.name == 'README.md':
@@ -111,7 +121,7 @@ def test_changed_content_is_detected(source, tmp_path):
 
 def test_duplicate_archive_members_are_rejected(tmp_path):
     path = tmp_path / 'duplicate.tar.gz'
-    with tarfile.open(path, 'w:gz') as archive:
+    with canonical_tar_writer(path) as archive:
         for _ in range(2):
             info = tarfile.TarInfo('README.md')
             info.size = 1
@@ -125,7 +135,7 @@ def test_archive_identity_and_mode_metadata_cannot_be_changed(source, tmp_path, 
     original = tmp_path / 'mode-original.tar.gz'
     release.build(source, original)
     changed = tmp_path / 'mode-changed.tar.gz'
-    with tarfile.open(original) as src, tarfile.open(changed, 'w:gz') as out:
+    with tarfile.open(original) as src, canonical_tar_writer(changed) as out:
         for member in src:
             data = src.extractfile(member).read()
             if member.name == 'README.md':
@@ -138,3 +148,39 @@ def test_archive_identity_and_mode_metadata_cannot_be_changed(source, tmp_path, 
             out.addfile(member, io.BytesIO(data))
     with pytest.raises(ValueError):
         release.verify(changed)
+
+
+@pytest.mark.parametrize('fault', ['manifest-extra', 'pax-comment', 'gzip-filename', 'file-linkname', 'dot-member'])
+def test_unreviewed_metadata_cannot_hide_private_content(source, tmp_path, fault):
+    original = tmp_path / 'metadata-original.tar.gz'
+    release.build(source, original)
+    changed = tmp_path / 'metadata-changed.tar.gz'
+    tar_format = tarfile.PAX_FORMAT if fault == 'pax-comment' else tarfile.USTAR_FORMAT
+    filename = 'synthetic-private-name' if fault == 'gzip-filename' else ''
+    with tarfile.open(original) as src, canonical_tar_writer(changed, format=tar_format, filename=filename) as out:
+        for member in src:
+            data = src.extractfile(member).read()
+            if fault == 'manifest-extra' and member.name == release.MANIFEST:
+                manifest = json.loads(data)
+                manifest['unreviewed'] = 'Synthetic private metadata'
+                data = release.canonical(manifest)
+                member.size = len(data)
+            if member.name == 'README.md':
+                if fault == 'pax-comment': member.pax_headers = {'comment': 'Synthetic private metadata'}
+                if fault == 'file-linkname': member.linkname = 'synthetic-private-path'
+                if fault == 'dot-member': member.name = '.'
+            out.addfile(member, io.BytesIO(data))
+    with pytest.raises(ValueError):
+        release.verify(changed)
+
+
+def test_concatenated_gzip_stream_is_rejected(source, tmp_path):
+    path = tmp_path / 'concatenated.tar.gz'
+    release.build(source, path)
+    with path.open('ab') as f: f.write(gzip.compress(b'synthetic hidden suffix'))
+    with pytest.raises(ValueError): release.verify(path)
+
+
+def test_dot_and_cross_platform_paths_are_not_sources():
+    for value in ('.', '', 'C:/drive', 'folder' + chr(92) + '..' + chr(92) + 'hidden'):
+        assert not release.safe_path(value)

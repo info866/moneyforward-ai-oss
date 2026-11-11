@@ -42,3 +42,12 @@ live CLI integrations complete. R1/R2 in PRODUCTION_GATES.md remain open.
 Run `make test-accounting`. The three synthetic journals in the demo are not
 three live accounting transactions, and journal verification is not whole-run
 or voucher completion.
+
+## Trust boundary
+
+`tax_amounts_verified` means equality against caller-supplied expectations. This
+layer does not itself acquire or authenticate the witness. The trusted caller
+must bind it to the reviewed source/plan and the exact journal request before
+calling verification. Passing values copied from the GET response defeats
+independence and is forbidden. This provenance/approval integration remains a
+production prerequisite, not a completed source-publication claim.

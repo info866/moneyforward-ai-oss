@@ -105,3 +105,20 @@ def test_demo_runs_from_independent_generated_copy(tmp_path):
     assert facts['provider_operations'] == 0
     assert facts['accounting_completed'] is False
     assert facts['production_ready'] is False
+
+
+def test_bootstrap_includes_all_accounting_execution_materials(tmp_path):
+    import importlib.util
+    import sys
+    import subprocess
+    spec = importlib.util.spec_from_file_location('distribution_accounting_bootstrap', ROOT / 'scripts/bootstrap_company.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    dest = tmp_path / 'accounting-copy'
+    module.bootstrap('synthetic-copy', dest)
+    for name in ('examples/accounting_fixtures.py', 'examples/accounting_pipeline_demo.py', 'tests/test_accounting_pipeline_e2e.py'):
+        assert (dest / name).read_bytes() == (ROOT / name).read_bytes()
+    result = subprocess.run([sys.executable, str(dest / 'examples/accounting_pipeline_demo.py')],
+                            cwd=tmp_path, check=True, capture_output=True, text=True)
+    import json
+    assert json.loads(result.stdout)['replay_extra_mutations'] == 0
