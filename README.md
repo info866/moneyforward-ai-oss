@@ -1,6 +1,10 @@
 # Money Forward AI Automation
 
-[日本語](README.ja.md) · [Setup](docs/SETUP.md) · [Capabilities](docs/FEATURE_MATRIX.md) · [Contributing](CONTRIBUTING.md)
+[日本語](README.ja.md) · [Start contributing](docs/CONTRIBUTOR_START.md) · [Setup](docs/SETUP.md) · [Capabilities](docs/FEATURE_MATRIX.md) · [Contributing](CONTRIBUTING.md)
+
+> **Beyond API connectors:** working toward accounting correctness that can be independently tested, safely resumed and audited.
+
+**Contributors wanted:** [Start here](docs/CONTRIBUTOR_START.md) · [Open technical challenges](https://github.com/info866/moneyforward-ai-oss/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) · [75-second synthetic demo guide](docs/DEMO_WALKTHROUGH.md)
 
 **0.1.0a2 · Developer preview · Publication pending owner approval.**
 Money Forward-specific accounting automation source for independent users and
@@ -70,6 +74,8 @@ user's production account. GitHub Actions are not used.
 Money Forward names identify interoperability only; this project is not endorsed
 by Money Forward, Inc., and no provider SDK, service, credential or customer data
 is redistributed. Each adopter must follow its own API/product agreements.
+
+For project-only maintainer contact, see [MAINTAINERS](MAINTAINERS.md). External outreach materials are held for an authorized Public launch; no official partner relationship has been claimed.
 
 See [source scope](docs/PUBLIC_RELEASE_SCOPE.md), [source release checks](docs/RELEASE_GATES.md),
 [production gates](docs/PRODUCTION_GATES.md), [security](SECURITY.md), and

@@ -2,6 +2,8 @@
 
 This developer-preview repository is prepared for external contributions; it remains Private until the owner authorizes publication. Money Forward users can then contribute improvements tested with synthetic fixtures and, where separately authorized, their own accounts. Source contributions do not require production certification of the whole product.
 
+If this is your first contribution, read [the five-command quickstart and issue guide](docs/CONTRIBUTOR_START.md). We welcome reproducible, focused fixes from experienced Python/MCP/accounting engineers; do not assume a real provider account is required for initial tests.
+
 ## Pull request contract
 
 1. Describe the actual Money Forward product/API, supported version, scope and a reproducible use case.

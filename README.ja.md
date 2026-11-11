@@ -1,5 +1,9 @@
 # Money Forward AI Automation
 
+> **API接続だけでは終わらない。** 仕訳・税額・証憑の正確さ、二重登録防止、中断復旧を**再現テストで証明できる**Money Forward専用OSSを目指します。
+
+**開発者の参加を募集：** [参加ガイド（日英）](docs/CONTRIBUTOR_START.md) · [改善に参加できるIssue](https://github.com/info866/moneyforward-ai-oss/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) · [75秒デモの構成](docs/DEMO_WALKTHROUGH.md)
+
 **0.1.0a2・開発者向けプレビュー。現在は非公開、公開操作は所有者承認待ち。**
 Money Forward専用の会計自動化コードを、利用者自身の環境で検証・改良するためのプロジェクトです。Money Forward株式会社の公式製品ではなく、完全自律の本番会計や決算完了を保証する製品でもありません。
 
@@ -39,3 +43,6 @@ python examples/accounting_pipeline_demo.py
 [貢献ルール](CONTRIBUTING.md) / [改善課題](ROADMAP.md) / [公開手順](docs/PUBLICATION_CHECKLIST.md) / [セキュリティ](SECURITY.md)
 
 ライセンスは[MIT](LICENSE)。各利用者が自分のAPI利用条件・製品権限を守って利用します。GitHub Actions、本番への自動配備、共有認証は使用しません。
+
+
+本人のプロフィールを公開しないGitHubの技術窓口については [MAINTAINERS](MAINTAINERS.md) を参照してください。正式な公開・外部告知はまだ行っていません。
