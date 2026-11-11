@@ -78,7 +78,9 @@ def test_generated_copy_includes_examples_and_machine_release_gates(tmp_path):
         assert (dest / name).read_bytes() == (ROOT / name).read_bytes()
     readiness = json.loads((dest / "docs/release-readiness.json").read_text())
     assert readiness["publication_authorized"] is False
-    assert readiness["release_decision"] == "BLOCKED"
+    assert readiness["production_activation"]["status"] == "BLOCKED"
+    assert readiness["production_activation"]["live_e2e_verified"] is False
+    assert readiness["source_publication"]["public_visibility_authorized"] is False
     subprocess.run(["git", "init", "-q", str(dest)], check=True)
     result = subprocess.run(
         [sys.executable, "-c", "import sys;sys.path.insert(0,'src');from mf_phase12.cli import _aggregate_implementation_head;print(_aggregate_implementation_head())"],

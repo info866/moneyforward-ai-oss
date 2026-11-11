@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security reporting / 機密性のある報告
+    url: https://github.com/info866/moneyforward-ai-oss/security/policy
+    about: Read SECURITY.md; never disclose credentials or real financial data in an issue.

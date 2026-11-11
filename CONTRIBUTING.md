@@ -1,6 +1,6 @@
 # Contributing (pre-release)
 
-This repository is currently **PRIVATE** and is not yet accepting unsolicited public contributions. After the owner authorizes a public release, Money Forward users may propose improvements tested against their own authorized accounts.
+This developer-preview repository is prepared for external contributions; it remains Private until the owner authorizes publication. Money Forward users can then contribute improvements tested with synthetic fixtures and, where separately authorized, their own accounts. Source contributions do not require production certification of the whole product.
 
 ## Pull request contract
 
@@ -21,3 +21,19 @@ There is no GitHub Actions workflow in this staging repository. Tests must be ex
 ## Reproducible local verification
 
 Use the complete source checkout with `python -m pip install -c constraints-test.txt -e '.[test]'`, then `make test` and `make audit`. Test fixtures are synthetic and independent of a live Money Forward account. See `examples/README.md` for workflow-specific entrypoints. Check your local Git author identity before committing; use a public handle and GitHub noreply email, not an employer or personal contact address. Do not copy private denylist files into the repo.
+
+## Rights and maintainership
+
+Submit original work or code with compatible, preserved notices. By submitting
+a PR you confirm authority to contribute it under this repository's MIT license.
+Do not paste a private employer/client implementation without permission.
+The repository owner reviews adoption and publication; no contributor receives
+production access. Use the issue/PR templates and CODE_OF_CONDUCT.md.
+
+## Practical accounting reproduction
+
+Run `make test-accounting` and `python examples/accounting_pipeline_demo.py`.
+These exercise bundled accounting functions with a synthetic provider, not a
+real Money Forward tenant. Add expected journal-line/read-back assertions and
+negative/unknown-effect/replay tests for related changes. See ROADMAP.md for
+the unresolved production integrations.

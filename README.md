@@ -1,54 +1,78 @@
-# Money Forward AI Automation — private OSS candidate
+# Money Forward AI Automation
 
-[日本語](README.ja.md) · [Setup](docs/SETUP.md) · [Release audit](docs/RELEASE_AUDIT.md)
+[日本語](README.ja.md) · [Setup](docs/SETUP.md) · [Capabilities](docs/FEATURE_MATRIX.md) · [Contributing](CONTRIBUTING.md)
 
-**PRIVATE / UNRELEASED / NOT PRODUCTION-CERTIFIED.** This is a Money Forward-specific accounting automation development candidate, not a finished autonomous accountant and not an official Money Forward product.
+**0.1.0a2 · Developer preview · Publication pending owner approval.**
+Money Forward-specific accounting automation source for independent users and
+contributors. This is an unofficial community-development project, **not a
+production-certified autonomous accountant**. The repository remains private
+until the separate publication action is authorized.
 
-## What is present
+## Why this project
 
-The repository contains existing first-party accounting code, SQLite schema, per-company profile/bootstrap, provider-read-only MCP with opt-in local DAILY run metadata, and offline regression tests. The tests cover source-to-journal decisions, evidence/read-back checks, workflow state, partial failure, tenant boundaries and replay safety using synthetic providers. Source existence and passing offline tests do not prove live provider behavior.
+Improve the practical accounting pipeline: evidence and journal decisions,
+matching/reconciliation, authorization, duplicate prevention, authoritative
+read-back, and safe recovery. The code goes beyond an API connector; improvements
+must be demonstrated on expected accounting outputs and failure/replay cases.
 
-Each user must use their own authorized Money Forward account and locally kept credentials. No company identity, customer records, production secrets, private database or source repository history is included in the candidate tree.
+Every user operates their own Money Forward account and keeps credentials and
+business records locally. No shared account, maintainer-hosted API, production
+company data, private repository import or cloud agent subscription is required
+for the offline development quickstart.
 
-## Local setup
+## Reproduce locally
 
-Python 3.11+ and Git are required. The supported installation is a complete source checkout with editable installation; do not move only the Python package away from its SQL/config tree.
+The tested environment is macOS / Python 3.13; Python 3.11+ is required. Some
+live adapters use macOS Keychain and external PDF tools. Other OS combinations
+are not certified. Use a full source checkout or verified source archive.
 
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install -c constraints-test.txt -e '.[test]'
-make test
-make audit
-# Optional: install '.[cloud]' and run make test-cloud for real SDK dispatch.
-make run ARGS="--help"
+python -m pip install -c constraints-cloud.txt -e '.[test,cloud]'
+make test test-cloud test-accounting audit
+python examples/portable_state_demo.py
+python examples/accounting_pipeline_demo.py
 ```
 
-`make test` uses synthetic fixtures. Do not provide real credentials while testing. The unconfigured example refuses real business operations. The canonical setup and company-generation instructions are in [docs/SETUP.md](docs/SETUP.md). Optional MCP dependencies are not needed for core/offline tests.
+The examples create only temporary synthetic state; they do not call Money
+Forward, access Keychain, or modify real accounting. Their output is explicitly
+`OFFLINE_SYNTHETIC`, never proof of live-provider performance. Core-only work may
+install `-c constraints-test.txt -e '.[test]'` and omit `test-cloud`.
 
-## Honest capability boundary
+## Included and not included
 
-| Area | Candidate status |
-| --- | --- |
-| Journal/evidence/tenant checks | Source and synthetic tests present |
-| Portable local DAILY run state and cache recovery | Opt-in; tested with synthetic bound databases; never certifies journals |
-| Duplicate/replay and partial-failure scenarios | Offline regression coverage; inspect test results |
-| Company-owned read-only API onboarding | Source present; real integration not certified here |
-| Five DAILY workflows from source intake to final delivery | Independent adopter live E2E still unverified |
-| Payroll/attendance UI operations and final calculation | Not certified or automatically configured |
-| Unattended cloud operation, decision learning, annual close/filing | Not established by this release candidate |
+The repository includes Python accounting modules, existing SQL schema,
+company-owned configuration/bootstrap, guarded provider adapters, approval and
+write-claim/read-back logic, opt-in local run recovery, tests and source packaging.
+See [feature matrix](docs/FEATURE_MATRIX.md) for exact support boundaries.
 
-The optional MCP is provider-read-only by default. With explicit local-state opt-in it tracks pending work and exceptions using the existing company database, but it still cannot post or certify journals, execute Cross Audit, or send final notifications. It is not a replacement for a full authorized accounting connector. A passing source test, MCP listing or mock response is not a successful journal write.
+**Not certified:** fully unattended source intake, all five DAILY workflows
+through final external delivery, payroll/attendance automation, annual close or
+filing. Full live MCP/GAS integration and tenant-specific real API E2E remain
+open engineering tasks. Publishing source does not mark them complete.
 
-## Contribution and release
+## Independent company and contribution workflow
 
-See [CONTRIBUTING](CONTRIBUTING.md), [AGENTS](AGENTS.md), [SECURITY](SECURITY.md), [operating model](docs/OPERATING_MODEL.md) and [release gates](docs/RELEASE_GATES.md). No GitHub Actions or automatic production deployment is used. Work on a branch; never copy real records or secrets into a PR. The repository stays private until the owner explicitly approves publication after every release blocker is resolved.
+Follow [SETUP](docs/SETUP.md) to generate an unconfigured independent copy.
+Configure only your own authorized products/office locally. Read-only discovery
+comes before any separately authorized write. Never publish real records,
+credentials, company profiles, screenshots, unredacted logs or API responses.
 
-MIT license text has been prepared in [LICENSE](LICENSE); the final source-rights and licensing decision remains an owner release gate. See [third-party notices](THIRD_PARTY_NOTICES.md).
+Use an issue and branch/PR with synthetic reproduction, before/after results,
+expected journal lines, replay counts and limitations. Merges never deploy to a
+user's production account. GitHub Actions are not used.
 
-## Resuming interrupted preparation
+## Source release and license
 
-[Resume verification](docs/RESUME_20261111.md) records the independently reproduced
-bootstrap failures, the fixes, and the exact local-state versus accounting boundary.
-See [setup](docs/SETUP.md#optional-portable-local-daily-state) for the explicit opt-in.
-The public release gate remains blocked; this improvement is not live E2E evidence.
+[MIT](LICENSE). Original copyright and license notices must be retained.
+[Dependency notices](THIRD_PARTY_NOTICES.md) cover separately installed software.
+Money Forward names identify interoperability only; this project is not endorsed
+by Money Forward, Inc., and no provider SDK, service, credential or customer data
+is redistributed. Each adopter must follow its own API/product agreements.
+
+See [source scope](docs/PUBLIC_RELEASE_SCOPE.md), [source release checks](docs/RELEASE_GATES.md),
+[production gates](docs/PRODUCTION_GATES.md), [security](SECURITY.md), and
+[publication steps](docs/PUBLICATION_CHECKLIST.md). Build a source snapshot only
+from a clean committed checkout with `make source-release`; verify the archive
+before extraction. A successful build never publishes anything.

@@ -2,7 +2,7 @@
 
 ## First-party source
 
-The `mf_phase12` implementation, per-company bootstrap, schema and tests were selected from the repository owner's pre-existing independent company starter. No source Git history, credentials, business records or production configuration was copied. The source snapshot and selected-file hashes are retained in a separate private audit record. This project remains private; the owner must review the final source rights and MIT licensing decision before public distribution.
+The `mf_phase12` implementation, per-company bootstrap, schema and tests were selected from the repository owner's pre-existing independent company starter. No source Git history, credentials, business records or production configuration was copied. The source snapshot and selected-file hashes are retained in a separate private audit record. The owner instructed preparation of this owner-controlled source for open-source release under the included MIT license. The repository remains private pending the separate visibility-change approval. Unreviewed third-party ownership claims must be resolved before distributing affected code.
 
 No code from `knorq-ai/moneyforward-connector` was incorporated in this preparation. There is no runtime import of a private upstream repository.
 

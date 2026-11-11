@@ -28,3 +28,13 @@ exception-decision reuse, and rebuilding a missing JSON cache from the bound
 SQLite state. It does **not** call Money Forward or mark accounting complete.
 The temporary DB is removed automatically; never use this fixture binding as a
 real company's office verification.
+
+## Actual accounting implementation boundary
+
+Run `python examples/accounting_pipeline_demo.py` and `make test-accounting`.
+The example exercises the actual bundled journal request/approval/claim/POST/GET
+verification/reconciliation implementation with synthetic source-approved tax
+amounts and an in-memory provider. It checks single and mixed-tax multiple lines,
+timeout after a committed write and additional replay mutations zero. This is
+not OCR, voucher, full DAILY or real Money Forward E2E acceptance.
+See docs/ACCOUNTING_ACCEPTANCE.md for the required independent tax witness.

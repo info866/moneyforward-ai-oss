@@ -37,6 +37,7 @@ class JournalCreateReadBackVerification:
     tax_readback_verified: bool
     tax_method: str
     journal_number: str | None = None
+    tax_amounts_verified: bool = False
 
     def to_redacted_dict(self) -> dict[str, Any]:
         payload = {
@@ -54,6 +55,7 @@ class JournalCreateReadBackVerification:
             "transaction_link_verified": self.transaction_link_verified,
             "transaction_status": self.transaction_status,
             "tax_readback_verified": self.tax_readback_verified,
+            "tax_amounts_verified": self.tax_amounts_verified,
             "tax_method": self.tax_method,
             "raw_secret_stored": False,
             "raw_journal_id_stored": False,
@@ -76,6 +78,7 @@ def verify_journal_create_read_back(
     post_result: dict[str, Any],
     transaction_journalize_request: dict[str, Any] | None = None,
     office_id: str | None = None,
+    expected_tax_values: list[dict[str, Any]] | None = None,
 ) -> JournalCreateReadBackVerification:
     _require(bool(journal_id), "journal_id is required")
     _validate_post_result(post_result)
@@ -133,6 +136,7 @@ def verify_journal_create_read_back(
         office_id=office_id,
         execution_channel=execution_channel,
         expected_transaction_id=expected_transaction_id,
+        expected_tax_values=expected_tax_values,
     )
     if result.verified and expected_transaction_id:
         transaction_verified, transaction_status, transaction_response_hash = _verify_linked_transaction_read_back(
@@ -205,6 +209,7 @@ def verify_journal_create_read_back_with_connection_factory(
     post_result: dict[str, Any],
     transaction_journalize_request: dict[str, Any] | None = None,
     office_id: str | None = None,
+    expected_tax_values: list[dict[str, Any]] | None = None,
 ) -> JournalCreateReadBackVerification:
     """Verify without holding SQLite open across authoritative GETs."""
 
@@ -259,6 +264,7 @@ def verify_journal_create_read_back_with_connection_factory(
         office_id=office_id,
         execution_channel=execution_channel,
         expected_transaction_id=expected_transaction_id,
+        expected_tax_values=expected_tax_values,
     )
     if result.verified and expected_transaction_id:
         transaction_verified, transaction_status, transaction_response_hash = (
@@ -326,6 +332,7 @@ def resolve_uncertain_journal_create_by_read_back(
     approval_hash: str,
     transaction_journalize_request: dict[str, Any] | None = None,
     office_id: str | None = None,
+    expected_tax_values: list[dict[str, Any]] | None = None,
 ) -> JournalCreateReadBackVerification:
     """Resolve a claimed/uncertain create only through an exact GET read-back.
 
@@ -400,6 +407,7 @@ def resolve_uncertain_journal_create_by_read_back(
         office_id=office_id,
         execution_channel=execution_channel,
         expected_transaction_id=expected_transaction_id,
+        expected_tax_values=expected_tax_values,
     )
     if result.verified and expected_transaction_id:
         transaction_verified, transaction_status, transaction_response_hash = _verify_linked_transaction_read_back(
@@ -492,6 +500,7 @@ def resolve_uncertain_journal_create_by_read_back_with_connection_factory(
     approval_hash: str,
     transaction_journalize_request: dict[str, Any] | None = None,
     office_id: str | None = None,
+    expected_tax_values: list[dict[str, Any]] | None = None,
 ) -> JournalCreateReadBackVerification:
     """GET-only recovery with no SQLite handle open during API traffic."""
 
@@ -526,6 +535,7 @@ def resolve_uncertain_journal_create_by_read_back_with_connection_factory(
         office_id=office_id,
         execution_channel=execution_channel,
         expected_transaction_id=expected_transaction_id,
+        expected_tax_values=expected_tax_values,
     )
     if result.verified and expected_transaction_id:
         transaction_verified, transaction_status, transaction_response_hash = (
@@ -586,6 +596,7 @@ def _perform_journal_read_back(
     office_id: str | None,
     execution_channel: str = JOURNAL_CREATE_EXECUTION_CHANNEL,
     expected_transaction_id: str = "",
+    expected_tax_values: list[dict[str, Any]] | None = None,
 ) -> JournalCreateReadBackVerification:
     journal_id_hash = mask_identifier(journal_id)
     response = client.journal(journal_id, office_id=office_id)
@@ -631,11 +642,21 @@ def _perform_journal_read_back(
         journal_matches = actual == expected
     response_transaction_id = str(response_journal.get("transaction_id") or "")
     link_matches = not expected_transaction_id or response_transaction_id == expected_transaction_id
-    verified = journal_matches and tax_matches and link_matches
+    amount_matches, expected_amounts, actual_amounts = _tax_amount_read_back(
+        response_journal, expected_tax_values
+    )
+    # Gross equality and a tax ID cannot establish the source net/tax split.
+    # Expected tax values are verification-only facts, NOT provider POST fields.
+    if expected_tax_values is not None or not amount_matches:
+        expected["tax_values"] = expected_amounts
+        actual["tax_values"] = actual_amounts
+    verified = journal_matches and tax_matches and link_matches and amount_matches
     if not journal_matches and transaction_request_only:
         diff = "transaction journalize read-back did not match the bound request side"
     elif not journal_matches:
         diff = _diff_summary(expected, actual)
+    elif not amount_matches:
+        diff = "independent source tax amounts missing, invalid or different from read-back"
     elif not tax_matches:
         diff = "journal body matched except tax identity read-back did not match current term policy"
     elif not link_matches:
@@ -657,16 +678,17 @@ def _perform_journal_read_back(
                 "keys": sorted(response.keys()),
                 "actual_hash": stable_hash(actual),
                 "tax_method": tax_method,
-                "tax_readback_verified": tax_matches,
+                "tax_readback_verified": tax_matches and amount_matches,
             }
         ),
         diff_summary_redacted=diff,
         moneyforward_api_called=True,
         transaction_link_verified=link_matches if expected_transaction_id else False,
         transaction_status="journal_linked" if expected_transaction_id and link_matches else "not_applicable",
-        tax_readback_verified=tax_matches,
+        tax_readback_verified=tax_matches and amount_matches,
         tax_method=tax_method,
         journal_number=_extract_journal_number(response_journal),
+        tax_amounts_verified=expected_tax_values is not None and amount_matches,
     )
 
 
@@ -772,6 +794,53 @@ def _validate_post_result(post_result: dict[str, Any]) -> None:
     )
     if execution_channel == TRANSACTION_JOURNALIZE_EXECUTION_CHANNEL:
         _require(bool(post_result.get("request_hash")), "direct post result request_hash is required")
+
+
+def _tax_amount_read_back(actual_journal, expected_tax_values):
+    """Compare source-approved per-branch tax amounts without inferring a tax rate.
+
+    Pass [{"debitor": source_tax, "creditor": source_tax}, ...] from the
+    independently approved evidence/plan, never copied from this GET response.
+    Nonzero provider tax amounts without that source witness fail closed.
+    No tax calculation, rounding policy or tenant defaults are invented here.
+    """
+    from decimal import Decimal, InvalidOperation
+
+    def number(value):
+        if isinstance(value, bool) or value in (None, ""):
+            raise ValueError("tax amount not explicit")
+        try:
+            result = Decimal(str(value))
+        except (InvalidOperation, TypeError, ValueError) as error:
+            raise ValueError("invalid tax amount") from error
+        if not result.is_finite():
+            raise ValueError("non-finite tax amount")
+        return format(result.normalize(), "f")
+
+    branches = (actual_journal.get("branches") or actual_journal.get("journal_details")
+                or actual_journal.get("details") or [])
+    observed = []
+    try:
+        for branch in branches:
+            pair = {}
+            for name, alias in (("debitor", "debit"), ("creditor", "credit")):
+                side = branch.get(name) or branch.get(alias) or {}
+                value = side.get("tax_value")
+                pair[name] = number(value) if value not in (None, "") else None
+            observed.append(pair)
+        if expected_tax_values is None:
+            safe_without_amount_claim = all(v in (None, "0") for row in observed for v in row.values())
+            return safe_without_amount_claim, "independent_source_tax_values_required", observed
+        if not isinstance(expected_tax_values, list) or len(expected_tax_values) != len(observed):
+            return False, "invalid_source_tax_shape", observed
+        expected = []
+        for row in expected_tax_values:
+            if not isinstance(row, dict) or set(row) != {"debitor", "creditor"}:
+                return False, "invalid_source_tax_shape", observed
+            expected.append({name: number(row[name]) for name in ("debitor", "creditor")})
+        return expected == observed, expected, observed
+    except (ValueError, TypeError, AttributeError):
+        return False, "invalid_tax_amount", observed
 
 
 def _normalize_expected_journal(journal: dict[str, Any]) -> dict[str, Any]:

@@ -50,4 +50,4 @@ For any metric, preserve the denominator, time window, environment, and evidence
 
 ## Operations and publication
 
-**Private by default.** The repository owner must authorize public visibility separately, after all [release gates](RELEASE_GATES.md) pass. The staging branch and README do not themselves authorize publication.
+**Private by default.** The repository owner must authorize public visibility separately, after all source-publication [release gates](RELEASE_GATES.md) pass for the declared developer-preview scope. Live activation additionally requires [production gates](PRODUCTION_GATES.md), which remain unfulfilled. The staging branch and README do not themselves authorize publication.

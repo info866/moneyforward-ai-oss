@@ -32,6 +32,12 @@ Build a Money Forward-specific accounting automation project with testable end-t
 - Only evidence from the actual target, the same run and provider read-back can mark a workflow completed.
 - Incorrect or missing data becomes a bounded exception; safe, unrelated items may continue.
 
-## Publication gate
+## Source publication versus production activation
 
-The default release state remains **BLOCKED** until every check in docs/RELEASE_GATES.md is satisfied, including Git author/committer privacy, full repository history, third-party licenses, real API evidence, and the owner's explicit final approval.
+The source-only developer preview is evaluated under docs/RELEASE_GATES.md.
+The original full-accounting checklist is preserved in docs/PRODUCTION_GATES.md;
+R1/R2 remain open and must never be labeled live-complete. This explicit scope
+correction enables review and contribution to unfinished software without
+pretending it is a finished autonomous accountant. Never claim source-readiness
+until a clean source archive, independent extraction, tests, disclosure checks
+and GitHub read-back pass. Public visibility still needs separate owner approval.

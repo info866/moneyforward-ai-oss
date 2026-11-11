@@ -1,3 +1,5 @@
+> Historical checkpoint. The current developer-preview publication scope and measured decision are in [PUBLIC_RELEASE_SCOPE.md](PUBLIC_RELEASE_SCOPE.md) and [release-readiness.json](release-readiness.json). Production findings below remain valid; this historical report is not the current source-publication decision.
+
 # 公開準備監査 — 2026-11-11
 
 ## 最終判定

@@ -1,20 +1,29 @@
-# Security policy (pre-release)
+# Security policy
 
-This repository is a **private staging area**, with no production deployment and no production credential access.
+This is a developer preview, not a production-certified accounting service.
+The maintainer has no shared service holding contributors' credentials.
 
 ## Reporting
 
-For a suspected vulnerability or sensitive data exposure, use an appropriate **private GitHub security reporting channel** to the repository owner where available. Do not open a public issue containing exploit details, credentials, actual Money Forward records, or personal information.
+Once this repository is public and private vulnerability reporting is enabled,
+use GitHub **Security → Report a vulnerability** (the repository's private
+advisory channel). The publication operator must enable and verify this channel
+as described in docs/PUBLICATION_CHECKLIST.md. While the repository is Private,
+access is limited to approved collaborators; the public-report feature is not
+claimed enabled. Do not open an issue with exploit details or real data. If the
+private channel is unavailable, request that it be enabled with a non-sensitive
+message only; do not publish the vulnerability itself.
 
-If a secret or sensitive record is found in any commit, **stop release and distribution**. Remove access, assess rotation/revocation where appropriate, and recreate the public candidate with a clean history; deleting a file in a later commit does not erase earlier objects or copies.
+Never submit API keys, OAuth/Keychain material, real invoices, payroll, bank
+records, office IDs, raw API responses or personal information. Reproduce with
+synthetic data. If sensitive material is found, stop publication, contain the
+exposure and assess revocation/rotation. Deleting a later file does not erase
+old commits or downloaded copies.
 
-## Mandatory boundaries
+## Operation boundaries
 
-- The owner and each eventual user hold their own Money Forward API/OAuth credentials outside Git.
-- Do not log access/refresh tokens, authorization codes, raw financial documents, or full private HTTP responses.
-- No public issue, automated test, external PR, or local fixture may access the owner's production Money Forward environment.
-- All company/office permissions, irreversible writes, approvals, payroll changes, and financial reporting require explicit, correctly scoped authorization.
-- Network timeout or an uncertain write result never authorizes an unverified retry.
-- Publication is a separate owner-authorized step after the release checklist passes.
-
-This policy does not certify that the source is safe to publish. It defines how the release should be reviewed.
+Each user owns their tenant, locally stored credentials and exact approvals.
+Unknown-effect writes require provider reconciliation; do not retry blindly.
+Source tests, source publication and MCP tool listing do not authorize business
+operations or certify live readiness. Production gates remain in
+`docs/PRODUCTION_GATES.md`. No SLA or audit certification is offered.

@@ -24,3 +24,11 @@ audit:
 test-cloud:
 	$(PYTHON) -c "from importlib.metadata import version; print('Real MCP SDK:', version('mcp'))"
 	$(PYTHON) -m pytest -q tests/test_portable_workflow_bridge.py -k real_sdk
+
+.PHONY: test-accounting source-release
+test-accounting:
+	$(PYTHON) -m pytest -q tests/test_accounting_pipeline_e2e.py
+	$(PYTHON) examples/accounting_pipeline_demo.py
+
+source-release:
+	$(PYTHON) scripts/build_source_release.py --output $(or $(OUTPUT),dist/source.tar.gz)

@@ -3,7 +3,7 @@
   "checked_date": "2026-11-11",
   "visibility": "private",
   "publication_authorized": false,
-  "release_decision": "BLOCKED",
+  "release_decision": "VALIDATION_IN_PROGRESS",
   "privacy_screening": {
     "status": "PASS_WITH_SCOPE_LIMITS",
     "original_identifying_history_excluded": true,
@@ -89,5 +89,19 @@
     "generated_real_sdk_tests": 3,
     "generated_demo": "PASS_OFFLINE_SYNTHETIC_PROVIDER_OPERATIONS_ZERO",
     "independent_targeted_review": "NO_NEW_BLOCKING_DEFECT_FOR_THIS_PATCH"
+  },
+  "source_publication": {
+    "scope": "0.1.0a2-development-preview",
+    "status": "VALIDATION_IN_PROGRESS",
+    "public_visibility_authorized": false
+  },
+  "production_activation": {
+    "status": "BLOCKED",
+    "live_e2e_verified": false,
+    "unresolved": [
+      "R1",
+      "R2"
+    ],
+    "original_gates": "docs/PRODUCTION_GATES.md"
   }
 }

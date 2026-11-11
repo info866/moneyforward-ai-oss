@@ -1,3 +1,14 @@
+# 0.1.0a2 — source-development release candidate
+
+- Explicitly separate source publication from unchanged production activation.
+- Include deterministic clean-commit source packaging and manifest verification.
+- Provide privacy-safe contributor templates and exact capability/roadmap docs.
+- Add accounting execution/read-back/replay acceptance with synthetic providers.
+- Reject nonzero tax read-back without independent source amounts, and mismatched
+  net/tax splits even where gross and tax category match. Legacy callers must
+  provide source-approved expected_tax_values; no inferred tax calculation.
+- No Public operation, live accounting completion or production deployment implied.
+
 # Changelog
 
 ## 0.1.0a1 — private candidate, unreleased

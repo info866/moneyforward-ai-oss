@@ -1,33 +1,41 @@
-# Money Forward AI Automation — 非公開のOSS公開候補
+# Money Forward AI Automation
 
-**Private・未公開・本番運用の検収未完了です。** Money Forward専用の会計自動化を共同改善するための開発素材を整備しています。Money Forward株式会社の公式製品ではありません。
+**0.1.0a2・開発者向けプレビュー。現在は非公開、公開操作は所有者承認待ち。**
+Money Forward専用の会計自動化コードを、利用者自身の環境で検証・改良するためのプロジェクトです。Money Forward株式会社の公式製品ではなく、完全自律の本番会計や決算完了を保証する製品でもありません。
 
-## 現在含まれるもの
+## 何を改善するのか
 
-既存の法人分離済み実装から、会計処理のソース、SQLiteスキーマ、未設定の設定例、法人別コピー生成、読取専用MCP例、架空データによる回帰テストを選定しています。元のGit履歴、本番の会社設定、会計原本、DB、認証情報は収録しません。
+単純なAPI接続だけでなく、証憑・仕訳判断、照合、認可、二重登録防止、公式読戻し、中断復旧の実務処理を対象にします。第三者が自分のMoney Forward契約・事業所・認証を使って検証し、合成データで再現できる改善をPull Requestとして共有する方式です。
 
-テスト対象は仕訳候補、証憑照合、会社境界、同一入力の再実行、部分失敗と再開等です。**これらは隔離された模擬環境での検証であり、実Money Forwardへの仕訳・給与・決算完了ではありません。**
+本番会社の原本・仕訳・給与・DB・認証や、元の非公開Git履歴は含めません。開発者向けのオフライン検証にはMoney Forward認証もAI API契約も不要です。
 
-## 第三者の導入
+## まず動かす
 
-Python 3.11以上とGitが必要です。リポジトリを取得し、仮想環境で `python -m pip install -c constraints-test.txt -e '.[test]'`、`make test`、`make audit` を実行します。SQL・設定とソースを一緒に置くeditable installを使用してください。詳しい独立コピー作成・設定手順は [SETUP](docs/SETUP.md) を参照してください。
+検証済み環境はmacOS / Python 3.13。必要Pythonは3.11以上ですが、全OS・全バージョンでの稼働を認定していません。完全なソース一式を取得し、次を実行します。
 
-利用者は自分自身のMoney Forward事業所・正規認証を使用し、ローカルの設定・秘密・データをGitHubへ上げません。設定例は未設定状態のまま保持します。
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -c constraints-cloud.txt -e '.[test,cloud]'
+make test test-cloud test-accounting audit
+python examples/portable_state_demo.py
+python examples/accounting_pipeline_demo.py
+```
 
-## 未達事項
+テスト・デモは一時的な合成会社データだけを使用します。実際のMoney Forward接続・本番登録は行わず、結果にはOFFLINE_SYNTHETICと表示します。実MCP SDKの検査も実会計の検収ではありません。
 
-独立した第三者環境での全業務E2E、実APIへの許可された書込み後のread-back、勤怠/給与操作、無人起動・復旧、決算完了は未検収です。提供するMCP例は読取専用であり、完全な会計実行MCPを代替しません。
+## 配布するものと未完成部分
 
-[監査結果](docs/RELEASE_AUDIT.md)、[公開ゲート](docs/RELEASE_GATES.md)、[貢献規則](CONTRIBUTING.md)を確認してください。機能やテスト件数だけで実務品質の完成を主張しません。Public変更には所有者の別途明示承認が必要です。GitHub Actionsは使用しません。
+会計Pythonソース、SQL、法人別設定・生成スクリプト、認可・書込要求管理・公式読戻し比較、ローカルrun復旧、テスト、導入・貢献手順を含みます。
 
-MITライセンス本文を準備済みですが、公開時の権利確認と採用は所有者の最終確認事項です。
+一方、すべての原本取得、GAS等の外部連携、全機能クラウドMCP、仕訳から最終監査・通知までの無人運転、給与・勤怠・年次決算は完成品として提供していません。既存の本番検収条件は維持し、未達事項は[機能一覧](docs/FEATURE_MATRIX.md)と[本番利用条件](docs/PRODUCTION_GATES.md)に明示します。
 
+**共同開発用ソースを公開できることと、本番会計を任せられることは別です。**
 
-## 中断復旧・独立コピーの修正
+## 参加方法
 
-初回Gitコミットのない法人別コピーでも、ソース内容の指紋を使って実行記録を扱えるようにしました。
-同梱MCPはMoney Forwardへの書込みを提供せず、明示的な設定時のみ既存の法人別DBへ
-DAILYの対象・未処理・例外判断を保存します。同じrunの再開では外部書込みを実行しません。
-SQLiteへ保存済みでJSONキャッシュだけ欠けた場合は、同じ記録から復元します。
-これは仕訳登録・公式検証・監査・通知の完了を意味しません。
-詳細は [再開検収](docs/RESUME_20261111.md) と [導入手順](docs/SETUP.md)を参照してください。
+[導入手順](docs/SETUP.md)で自社用コピーを生成し、自社設定・秘密はGit外に保存します。不具合は架空の入力・期待仕訳・再現手順・実行結果を添え、Issue→branch→PR→レビューの順で提案してください。実帳票、会社名、従業員情報、APIキー、未加工ログは投稿しないでください。
+
+[貢献ルール](CONTRIBUTING.md) / [改善課題](ROADMAP.md) / [公開手順](docs/PUBLICATION_CHECKLIST.md) / [セキュリティ](SECURITY.md)
+
+ライセンスは[MIT](LICENSE)。各利用者が自分のAPI利用条件・製品権限を守って利用します。GitHub Actions、本番への自動配備、共有認証は使用しません。

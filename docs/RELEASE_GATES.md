@@ -1,41 +1,44 @@
-# Public-release gates — all mandatory
+# Source publication gates — development preview
 
-**This is a checklist, not evidence that any check has passed.**
+Scope: **0.1.0a2 developer preview**, not production-certified autonomous accounting.
+See PUBLIC_RELEASE_SCOPE.md for the explicit correction to the earlier conflated
+publication policy. The original gates are preserved in PRODUCTION_GATES.md.
 
-## A. Security and disclosure
+## Mandatory before declaring the source candidate ready
 
-- [ ] Confirm the new repository has no production-derived data, raw account IDs, user/employee names, emails, addresses, salary details, invoices, journals, receipts, tax records, real run logs, API responses, or sensitive folder paths.
-- [ ] Inspect **all tracked files and full Git history**, including commit messages, reachable branches and tags; reject any copied production commits.
-- [ ] Inspect **commit author/committer names and email metadata**, including initial and staging commits. The original staging history was quarantined in a separate private archive after identifying metadata was detected. The release candidate must contain only its fresh pseudonymous/noreply history; never merge old commits.
-- [ ] Review Issues/PRs, attachments, Discussions, release assets, action artifacts/logs (if any), and repo metadata for information leakage.
-- [ ] Run secret scanning and an independent human/agent review; redaction in README alone is insufficient.
-- [ ] Ensure test fixtures are **synthetic from origin**, not merely stripped versions of sensitive records.
-- [ ] Ensure no production OAuth tokens, API keys, webhooks, Keychain material, DB backups, or browser profiles are transferred.
-- [ ] Verify documentation and code do not reveal private infrastructure or allow production account access.
-- [ ] Confirm Money Forward terms, all third-party licenses, notices, trademarks, and the project's chosen open-source license.
+- [ ] All reachable branches, tags, commits, author/committer metadata, source
+  files, Issues/PRs/comments, assets and visible repository settings are screened.
+- [ ] Gitleaks and private identity denylist screening report no unresolved findings;
+  focused independent review has no unresolved blocking disclosure finding.
+- [ ] No real office profile, evidence, payroll, journal data, secrets, original
+  private Git objects, webhook values or local path identity is distributed.
+- [ ] LICENSE is valid MIT text for owner-controlled first-party code; dependency
+  notices and actual tested versions are included. No unreviewed vendor code.
+- [ ] A clean source checkout AND an independently extracted source archive install
+  and pass core/cloud/accounting tests, static audit and executable examples.
+- [ ] The distribution is generated from one clean commit; repeated builds are
+  byte-identical and every included file has a checked content hash.
+- [ ] README and feature matrix distinguish real source, synthetic verification,
+  supported interfaces, external prerequisites and unverified live operations.
+- [ ] Contribution/bug/feature/PR templates require safe reproduction and forbid
+  uploading credentials or business/personal data.
+- [ ] Operational reports cannot silently send company data to the public OSS repo;
+  no Actions, production deployment, hosted service or extra credentials are added.
+- [ ] The exact tested commit and read-back evidence are recorded in Issue #1.
 
-## B. Repeatable accounting quality
+## Separate actions (not performed by a readiness check)
 
-- [ ] Each advertised workflow has a synthetic end-to-end test with deterministic expected journal lines, amounts, tax categories, and documentary provenance.
-- [ ] Every mutation path checks tenant/office, source identity, masters, expected effect, duplicate/previously committed result, and authorized scope.
-- [ ] Official read-back of journal lines, vouchers, and relevant source IDs is the only basis for marking external writes VERIFIED.
-- [ ] Same-input replay and interrupted-run replay are tested to produce **zero extra external writes**.
-- [ ] Unknown-effect POST/timeouts, HTTP 429/5xx, authentication loss, wrong office, unsupported API, missing documents, and partial failures are separately tested. A safe failure must not block unrelated ready items.
-- [ ] Complete workflow status must reflect **actual** outstanding items, approvals and notifications; a passed CI/unit test is not a business close.
-- [ ] At least one separately authorized real-API validation is documented with **redacted evidence**, without publishing account data. Read-only first, narrow write tests only when explicitly approved.
-- [ ] Each included module has a working local setup and documented, reproducible tests for an independent user and their own Money Forward auth.
+The owner approves the exact Public visibility change after reviewing the final
+source audit. The publication operator rechecks GitHub surfaces and enables the
+private vulnerability reporting channel for the resulting public repository.
+No script here changes repository visibility, creates a release, posts accounting
+entries or promotes the code to a production system.
 
-## C. Operational release
+## Production status
 
-- [ ] Neutral setup instructions work without access to any private owner repo, company, local path, hidden MCP, or proprietary agent skill.
-- [ ] Documentation distinguishes currently working features from roadmap items.
-- [ ] Security/contact and contribution policy are operational; the license is selected and the notices are correct.
-- [ ] External code contributions remain review-gated; there is no automatic production mirroring.
-- [ ] The owner reviews the final inventory, source commit and complete history, and approves the exact public release contents.
-- [ ] **Separate explicit owner approval** is obtained immediately before changing GitHub visibility to Public.
+**BLOCKED / NOT VERIFIED**. Every live identity, authorization, source, journal,
+voucher, replay, audit, notification and tenant-specific acceptance condition in
+PRODUCTION_GATES.md remains binding. Neither a source release nor mock test
+success may waive it. SOURCE-READY is never LIVE-READY.
 
-## Not permitted
-
-Do not make this repository public merely because tests pass or a release date arrives. Do not publish the original private repository or any of its historical commits. Do not enable GitHub Actions for this preparation. Do not weaken data or authorization gates to make acceptance tests pass.
-
-**Current release decision: BLOCKED — private preparation only.**
+The measured current decision is in release-readiness.json and Issue #1.

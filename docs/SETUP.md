@@ -1,3 +1,8 @@
+> **0.1.0a2 developer preview:** offline setup is self-contained. The live
+> onboarding and integration procedures below have prerequisites and are not
+> represented as end-to-end certified. See FEATURE_MATRIX.md and
+> PRODUCTION_GATES.md before connecting any real account.
+
 # Independent Money Forward company starter
 
 > **Cloud-first migration target (2026-10-19):** ChatGPT is the ordinary accounting orchestrator; company-specific authenticated MCP/API and existing DB/RAG remain the durable backend. Local CLI is maintenance-only. Template generation does not deploy or connect a ChatGPT plugin. See [single generic Project Skill](skills/chatgpt_project_shiwake.md), company identity gates, and readiness criteria below.
