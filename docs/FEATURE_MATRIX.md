@@ -6,6 +6,7 @@ This table describes 0.1.0a2, not the private owner's production system.
 | --- | --- | --- |
 | Independent company setup | Bootstrap, unconfigured profile, full Python/SQL source | Offline generated-copy tests; no initial commit needed |
 | Money Forward API transport | Existing guarded accounting/invoice/payable clients | Synthetic contract tests; own product OAuth/identity/scopes required |
+| Sales-invoice native linkage | Existing invoice/accounting probe with explicit unconfirmed-link state | [Three-stage contract](SALES_INVOICE_NATIVE_LINK.md); synthetic regression only, no live native-link acceptance |
 | Journal planning and classification | Existing decision, RAG/master and deterministic validation code | No bundled real journal history; no claimed accounting accuracy percentage |
 | Journal execution and read-back | Existing approval, intent, durable claim, POST and comparison functions | Synthetic pipeline acceptance; raw provider responses stay local |
 | Unknown-effect POST and replay | Existing uncertain-delivery/reconciliation path | Offline fault/replay tests; never blind retry |
