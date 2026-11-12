@@ -592,7 +592,7 @@ def _normalize_accrual_item(match: dict[str, Any]) -> dict[str, Any]:
             if len(native_journal_ref_hashes) == 1
             else "ambiguous"
             if len(native_journal_ref_hashes) > 1
-            else "ui_confirmation_required"
+            else "registered_journal_not_confirmed"
         ),
         "native_journal_ref_hashes": native_journal_ref_hashes,
         "native_source_verified": bool(native_journal_ref_hashes),

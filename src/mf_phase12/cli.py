@@ -5961,6 +5961,31 @@ def _resolve_prior_source_items(
         )
 
 
+def _sales_invoice_workflow_steps(
+    *, billing_count: int, verified_count: int
+) -> list[dict[str, Any]]:
+    """Describe the native invoice path without implying an unobserved UI candidate."""
+    if billing_count < 0 or not 0 <= verified_count <= billing_count:
+        raise ValueError("sales invoice verification counts are inconsistent")
+    unverified_count = billing_count - verified_count
+    return [
+        {"step": "invoice_api", "status": "verified", "invoice_count": billing_count},
+        {
+            "step": "moneyforward_native_link",
+            "status": "verified" if not unverified_count else "needs_attention",
+            "unverified_count": unverified_count,
+        },
+        {
+            "step": "accounting_api_readback",
+            "status": (
+                "verified" if not unverified_count else
+                "partial" if verified_count else "needs_attention"
+            ),
+            "verified_count": verified_count,
+        },
+    ]
+
+
 def _execute_sales_invoice_stage(
     db: Any,
     args: argparse.Namespace,
@@ -6031,6 +6056,11 @@ def _execute_sales_invoice_stage(
         capture_end=capture_end,
     )
     artifact["execution_summary"] = execution_summary
+    workflow_steps = _sales_invoice_workflow_steps(
+        billing_count=result.invoice_billing_count,
+        verified_count=execution_summary["official_readback_verified_count"],
+    )
+    artifact["workflow_steps"] = workflow_steps
     output_json.write_text(
         json.dumps(artifact, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -6041,6 +6071,7 @@ def _execute_sales_invoice_stage(
             if execution_summary["pending_count"] == 0
             else "incomplete",
             "workflow": "sales_invoice",
+            "workflow_steps": workflow_steps,
             "run_id_hash": "sha256:" + run_hash,
             "accounting_date": capture_end,
             "capture_period": {"start_date": capture_start, "end_date": capture_end},
@@ -6093,6 +6124,7 @@ def _execute_sales_invoice_stage(
         "moneyforward_api_called": True,
         "keychain_accessed": True,
         "oauth_token_refreshed": refresh_result is not None,
+        "workflow_steps": workflow_steps,
         "sales_invoice_probe": {
             "invoice_billing_count": result.invoice_billing_count,
             "matched_invoice_count": result.matched_invoice_count,
@@ -6800,7 +6832,7 @@ def _execute_sales_accrual_items(
             }
         )
         if not native_hashes:
-            item["native_linkage_status"] = "ui_confirmation_required"
+            item["native_linkage_status"] = "registered_journal_not_confirmed"
             continue
         if len(native_hashes) != 1:
             _mark_sales_accrual_review(item, "native_journal_identity_not_unique")
