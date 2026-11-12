@@ -33,6 +33,7 @@ python examples/accounting_pipeline_demo.py
 会計Pythonソース、SQL、法人別設定・生成スクリプト、認可・書込要求管理・公式読戻し比較、ローカルrun復旧、テスト、導入・貢献手順を含みます。
 
 一方、すべての原本取得、GAS等の外部連携、全機能クラウドMCP、仕訳から最終監査・通知までの無人運転、給与・勤怠・年次決算は完成品として提供していません。既存の本番検収条件は維持し、未達事項は[機能一覧](docs/FEATURE_MATRIX.md)と[本番利用条件](docs/PRODUCTION_GATES.md)に明示します。
+外部技術者への引継ぎは[検証済み範囲・残る受入条件](docs/EXTERNAL_ENGINEER_HANDOFF.md)をご覧ください。
 
 **共同開発用ソースを公開できることと、本番会計を任せられることは別です。**
 

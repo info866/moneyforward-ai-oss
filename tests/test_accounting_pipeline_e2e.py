@@ -300,3 +300,84 @@ def test_wrong_tax_split_cannot_clear_uncertain_delivery(tmp_path):
     with pytest.raises(JournalCreateDeliveryUncertainError):
         scenario.execute()
     assert scenario.provider.mutations == 1
+
+
+def test_uncertain_unknown_journal_get_must_stay_blocked_after_restart(tmp_path):
+    """A nonexistent official journal ID never permits another POST."""
+    scenario = prepare_scenario(tmp_path, timeout_after_commit=True)
+    with pytest.raises(TimeoutError):
+        scenario.execute()
+    scenario.restart()
+    # The caller has no independently matched journal ID; a guessed ID is invalid.
+    with pytest.raises(KeyError):
+        scenario.reconcile("synthetic-journal-not-found")
+    assert scenario.states() == ("planned", "delivery_uncertain", "planned")
+    scenario.restart()
+    with pytest.raises(JournalCreateDeliveryUncertainError):
+        scenario.execute()
+    assert scenario.provider.post_attempts == scenario.provider.mutations == 1
+
+
+def test_uncertain_changed_approved_request_fails_before_get(tmp_path):
+    """Recovered GET must be bound to the exact request hash of the original claim."""
+    scenario = prepare_scenario(tmp_path, timeout_after_commit=True)
+    with pytest.raises(TimeoutError):
+        scenario.execute()
+    scenario.restart()
+    altered = deepcopy(scenario.journal)
+    altered["branches"][0]["remark"] = "Synthetic changed after approval"
+    scenario.journal = altered
+    before = len(scenario.provider.calls)
+    with pytest.raises(ValueError, match="request hash mismatch"):
+        scenario.reconcile("synthetic-journal-1")
+    assert len(scenario.provider.calls) == before
+    assert scenario.states() == ("planned", "delivery_uncertain", "planned")
+    assert scenario.provider.mutations == 1
+
+
+def test_uncertain_wrong_office_cannot_be_reconciled(tmp_path):
+    """A stale/mismatched office fails without marking the write VERIFIED."""
+    scenario = prepare_scenario(tmp_path, timeout_after_commit=True)
+    with pytest.raises(TimeoutError):
+        scenario.execute()
+    scenario.restart()
+    scenario.provider.office_name = "Synthetic Different Office"
+    with pytest.raises(PermissionError, match="legal entity"):
+        scenario.reconcile("synthetic-journal-1")
+    assert scenario.states() == ("planned", "delivery_uncertain", "planned")
+    assert scenario.provider.mutations == 1
+
+
+def test_concurrent_replay_during_inflight_post_only_one_mutation(tmp_path):
+    """A second worker must not POST while the first worker holds the same claim."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    scenario = prepare_scenario(tmp_path)
+    entered = Event()
+    resume = Event()
+    original_request = scenario.provider.request
+
+    def paused_request(method, url, *, headers=None, body=None, timeout=30.0):
+        if method == "POST" and url.endswith("/api/v3/journals"):
+            entered.set()
+            if not resume.wait(5):
+                raise TimeoutError("synthetic worker was not released")
+        return original_request(method, url, headers=headers, body=body, timeout=timeout)
+
+    scenario.provider.request = paused_request
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(scenario.execute)
+        assert entered.wait(5), "first worker never reached synthetic POST"
+        try:
+            with pytest.raises(JournalCreateDeliveryUncertainError):
+                pool.submit(scenario.execute).result(timeout=5)
+        finally:
+            resume.set()
+        initial = first.result(timeout=5)
+    assert initial.executed
+    assert scenario.provider.post_attempts == scenario.provider.mutations == 1
+    scenario.restart()
+    replay = scenario.execute()
+    assert replay.already_executed and not replay.moneyforward_api_called
+    assert scenario.provider.post_attempts == scenario.provider.mutations == 1

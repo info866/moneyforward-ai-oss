@@ -51,6 +51,8 @@ company-owned configuration/bootstrap, guarded provider adapters, approval and
 write-claim/read-back logic, opt-in local run recovery, tests and source packaging.
 See [feature matrix](docs/FEATURE_MATRIX.md) for exact support boundaries.
 
+External engineers: [verified source handoff and outstanding acceptance gates](docs/EXTERNAL_ENGINEER_HANDOFF.md).
+
 **Not certified:** fully unattended source intake, all five DAILY workflows
 through final external delivery, payroll/attendance automation, annual close or
 filing. Full live MCP/GAS integration and tenant-specific real API E2E remain
