@@ -141,11 +141,17 @@ def run_invoice_accounting_link_probe(
 ) -> InvoiceAccountingLinkProbeResult:
     accounting_start_date = accounting_start_date or start_date
     accounting_end_date = accounting_end_date or end_date
-    partners = _fetch_paged(lambda page: invoice_client.partners(page=page, per_page=per_page), max_pages=max_pages)
+    partners = _fetch_paged(
+        lambda page: invoice_client.partners(page=page, per_page=per_page),
+        max_pages=max_pages, per_page=per_page,
+    )
     partner_names = {str(partner.get("id")): str(partner.get("name") or "") for partner in partners}
     billings = [
         billing
-        for billing in _fetch_paged(lambda page: invoice_client.billings(page=page, per_page=per_page), max_pages=max_pages)
+        for billing in _fetch_paged(
+            lambda page: invoice_client.billings(page=page, per_page=per_page),
+            max_pages=max_pages, per_page=per_page,
+        )
         if _date_in_range(_parse_api_date(str(billing.get("billing_date") or "")), start_date, end_date)
     ]
     enriched_billings = []
@@ -156,7 +162,7 @@ def run_invoice_accounting_link_probe(
         detail = _first_item(invoice_client.billing(billing_id)) or billing
         items = _fetch_paged(
             lambda page, current_id=billing_id: invoice_client.billing_items(current_id, page=page, per_page=per_page),
-            max_pages=max_pages,
+            max_pages=max_pages, per_page=per_page, require_ids=False,
         )
         enriched = dict(billing)
         for key, value in detail.items():
@@ -235,19 +241,122 @@ def _page_query(page: int, per_page: int) -> str:
     return urllib.parse.urlencode({"page": page, "per_page": per_page})
 
 
-def _fetch_paged(fetch_page: Any, *, max_pages: int) -> list[dict[str, Any]]:
+def _fetch_paged(
+    fetch_page: Any,
+    *,
+    max_pages: int,
+    per_page: int = 100,
+    require_ids: bool = True,
+) -> list[dict[str, Any]]:
+    """Read a complete, non-ambiguous Invoice API list or fail closed.
+
+    Accept the API's pagination/meta wrapper where present. For legacy lists
+    without metadata, only a short page proves the bounded page scan ended.
+    No source IDs or payload contents are included in failure messages.
+    """
+    if isinstance(max_pages, bool) or not isinstance(max_pages, int) or max_pages < 1:
+        raise ValueError("Invoice API max_pages must be positive")
+    if isinstance(per_page, bool) or not isinstance(per_page, int) or per_page < 1:
+        raise ValueError("Invoice API per_page must be positive")
+
     items: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    expected_pagination: tuple[int, int] | None = None
+    metadata_mode: bool | None = None
+    pagination_kind: str | None = None
     for page in range(1, max_pages + 1):
-        try:
-            page_items = _items(fetch_page(page))
-        except RuntimeError as error:
-            if page > 1 and "HTTP 400" in str(error):
-                break
-            raise
-        items.extend(page_items)
-        if not page_items:
-            break
-    return items
+        payload = fetch_page(page)
+        if isinstance(payload, list):
+            rows = payload
+            metadata = None
+        elif isinstance(payload, dict):
+            for key in ("data", "partners", "billings", "items"):
+                if key in payload:
+                    rows = payload[key]
+                    break
+            else:
+                raise RuntimeError("Invoice API page missing list array")
+            metadata_key = next(
+                (key for key in ("pagination", "meta", "metadata") if key in payload),
+                None,
+            )
+            metadata = payload[metadata_key] if metadata_key else None
+            if metadata_key and metadata is None:
+                raise RuntimeError("Invoice API pagination metadata invalid")
+        else:
+            raise RuntimeError("Invoice API page response invalid")
+
+        if not isinstance(rows, list) or len(rows) > per_page:
+            raise RuntimeError("Invoice API page rows/per_page invalid")
+        if any(not isinstance(item, dict) for item in rows):
+            raise RuntimeError("Invoice API page rows invalid")
+        has_metadata = metadata is not None
+        if metadata_mode is None:
+            metadata_mode = has_metadata
+        elif metadata_mode != has_metadata:
+            raise RuntimeError("Invoice API pagination metadata changed")
+        if has_metadata:
+            if not isinstance(metadata, dict):
+                raise RuntimeError("Invoice API pagination metadata invalid")
+            if {"total_pages", "total_count"} <= metadata.keys():
+                kind = "total_pages"
+                total_pages, total_count = metadata["total_pages"], metadata["total_count"]
+                if any(
+                    isinstance(value, bool) or not isinstance(value, int) or value < 0
+                    for value in (total_pages, total_count)
+                ) or (total_pages == 0 and total_count != 0):
+                    raise RuntimeError("Invoice API pagination metadata invalid")
+                if page > max(total_pages, 1):
+                    raise RuntimeError("Invoice API pagination exceeded total_pages")
+                current_pagination = (total_pages, total_count)
+                if expected_pagination is None:
+                    expected_pagination = current_pagination
+                elif current_pagination != expected_pagination:
+                    raise RuntimeError("Invoice API pagination metadata changed")
+            elif "next_page" in metadata:
+                kind = "next_page"
+                next_page = metadata["next_page"]
+                if next_page is not None and (
+                    isinstance(next_page, bool) or not isinstance(next_page, int)
+                    or next_page != page + 1
+                ):
+                    raise RuntimeError("Invoice API pagination next_page invalid")
+            else:
+                raise RuntimeError("Invoice API pagination metadata missing")
+            if pagination_kind is None:
+                pagination_kind = kind
+            elif pagination_kind != kind:
+                raise RuntimeError("Invoice API pagination mode changed")
+            if "current_page" in metadata and metadata["current_page"] != page:
+                raise RuntimeError("Invoice API pagination current_page mismatch")
+
+        if require_ids:
+            for item in rows:
+                identity = str(item.get("id") or "").strip()
+                if not identity:
+                    raise RuntimeError("Invoice API page has missing source identity")
+                if identity in seen_ids:
+                    raise RuntimeError("Invoice API pagination has duplicate source identity")
+                seen_ids.add(identity)
+        items.extend(rows)
+
+        if has_metadata and pagination_kind == "total_pages":
+            if len(items) > total_count:
+                raise RuntimeError("Invoice API pagination total_count mismatch")
+            if page >= total_pages:
+                if len(items) != total_count:
+                    raise RuntimeError("Invoice API pagination incomplete total_count")
+                return items
+            if not rows:
+                raise RuntimeError("Invoice API pagination incomplete empty page")
+        elif has_metadata:
+            if next_page is None:
+                return items
+            if not rows:
+                raise RuntimeError("Invoice API pagination incomplete empty page")
+        elif len(rows) < per_page:
+            return items
+    raise RuntimeError("Invoice API pagination exceeded page limit; inventory incomplete")
 
 
 def _fetch_accounting_journals(
@@ -258,28 +367,27 @@ def _fetch_accounting_journals(
     max_pages: int,
     per_page: int,
 ) -> list[dict[str, Any]]:
-    journals_by_key: dict[str, dict[str, Any]] = {}
+    """Reuse the verified journal pagination guard for each date window."""
+    from .sync import _fetch_all_journals, _journal_id
+
+    journals: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
     for window_start, window_end in _accounting_journal_windows(start_date, end_date):
-        for page in range(1, max_pages + 1):
-            try:
-                page_items = _items(
-                    accounting_client.journals(
-                        start_date=window_start,
-                        end_date=window_end,
-                        page=page,
-                        per_page=per_page,
-                    )
-                )
-            except RuntimeError as error:
-                if page > 1 and "HTTP 400" in str(error):
-                    break
-                raise
-            for position, journal in enumerate(page_items):
-                key = str(journal.get("id") or stable_hash({"window": window_start, "page": page, "position": position}))
-                journals_by_key.setdefault(key, journal)
-            if not page_items:
-                break
-    return list(journals_by_key.values())
+        page_rows = _fetch_all_journals(
+            accounting_client,
+            None,
+            start_date=window_start,
+            end_date=window_end,
+            per_page=per_page,
+            max_pages=max_pages,
+        )
+        for journal in page_rows:
+            identity = _journal_id(journal)
+            if identity in seen_ids:
+                raise RuntimeError("Accounting API pagination has duplicate journal identity")
+            seen_ids.add(identity)
+        journals.extend(page_rows)
+    return journals
 
 
 def _accounting_journal_windows(start_date: str, end_date: str) -> list[tuple[str, str]]:

@@ -37,6 +37,22 @@ MCP service, or journal-writing route is introduced by this document.
 - Before resuming an uncertain operation, prefer provider read-back and
   duplicate checks over retrying a possible write.
 
+## Complete source-inventory guard
+
+Invoice partners, billings and billing items are read page-by-page. A malformed
+page, inconsistent pagination metadata, duplicate source ID, missing required
+identity, rejected intermediate request, or exhausted page limit now **fails
+closed** instead of producing a deceptively complete inventory. The accounting
+journal scan reuses the existing journal-snapshot pagination validator and also
+checks duplicate IDs across date windows. No generic journal POST is introduced.
+
+The Invoice API reader accepts `pagination`, `meta`, and `metadata` page-total
+fields, and documented `next_page` navigation when supplied. Older responses
+without metadata use a short-page fallback; that is **not proof** of live API
+pagination completeness, and provider-specific integration acceptance remains
+required. Page-limit failures should be investigated or re-run with an explicitly
+reviewed larger limit, not ignored as an empty/complete scan.
+
 ## Evidence and release boundary
 
 The open-source probe and synthetic tests illustrate matching and uncertainty
