@@ -44,6 +44,20 @@ The following are independent acceptance tracks. They must **not** be reported a
 2. **Expected journal and tax witness** — [Issue #5](https://github.com/info866/moneyforward-ai-oss/issues/5). Bind approved source identity, expected net/tax/gross (including mixed rates and rounding), journal request hash and the matching GET; never derive expected tax values from the response being verified. Missing or forged provenance cannot mark `VERIFIED`.
 3. **Uncertain external effects** — [Issue #6](https://github.com/info866/moneyforward-ai-oss/issues/6). Extend the already-tested no-blind-retry/claim/reconciliation primitives. Confirm process restart, concurrency, missing/ambiguous GET, approval/input/office drift and zero extra POST in the adopter's authorized test tenant.
 4. **Voucher, Cross Audit, notification** — [Issue #8](https://github.com/info866/moneyforward-ai-oss/issues/8). On the **same run**, independently GET journal and relevant voucher/source evidence, persist a read-only audit receipt, and durably send one final notification. Notification-only resume must not re-POST any journal or voucher. The OSS MCP is not yet a complete writer/finalizer.
+### Optional native auto-journal-rule read (added 2026-11)
+
+The OSS company MCP now exposes **`get_journal_rules` for official GET only**
+(`GET /api/v3/journal_rules`). The company-bound client checks pagination metadata,
+rule IDs and duplicates, and rejects an invalid page. Each caller must enumerate
+and reconcile **every declared page**; a one-page response is not proof of full
+inventory when `total_pages > 1`. Existing OAuth requires
+`mfc/accounting/journal_rule.read` plus the provider tenant/user's permissions.
+HTTP 403 remains blocked and must not trigger alternate credentials, broad API
+keys, a second MCP, or read-to-write fallback. Adding this read action does not
+create/update/delete or promote a rule and does not enable transaction auto-
+registration. These are **offline synthetic contracts**, not live provider
+acceptance and not evidence that rule-based classification accuracy improved.
+
 5. **Actual API compatibility and release gate** — [Production gates](PRODUCTION_GATES.md). Validate endpoints, authorization scopes, pagination metadata, HTTP 429 behavior, official links and product account behavior from the official docs and an independently authorized adopter's tenant; use read-only discovery first. `mfc/invoice/data.read` is the read scope in [Money Forward's official Invoice API guide](https://biz.moneyforward.com/support/invoice/guide/api-guide/a03.html). The [official common API specification](https://developers.biz.moneyforward.com/docs/common/api_common_specifications/) describes pagination patterns **generically**, not a guarantee that every Invoice endpoint has identical metadata. [Invoice API docs](https://invoice.moneyforward.com/docs/api/v3/index.html) should decide endpoint-specific details. Do not silently change defaults to fabricate successful coverage.
 
 Payroll, tax filing, payment approval and other financially consequential changes have their own authorization requirements. They are **not** implicitly included in an invoice/journal acceptance.

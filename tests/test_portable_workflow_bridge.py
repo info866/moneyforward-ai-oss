@@ -210,6 +210,7 @@ def test_mcp_registration_contract_only(monkeypatch, companies):
     assert 'final_google_chat_send' not in module.mcp.registry
     assert 'cross_audit' not in module.mcp.registry
     assert module.mcp.registry['get_journal'][1].read_only_hint is True
+    assert module.mcp.registry['get_journal_rules'][1].read_only_hint is True
     with pytest.raises(StubToolError, match='disabled'):
         module.run_resume('synthetic')
 
@@ -283,6 +284,7 @@ def test_real_sdk_default_opt_in_and_provider_write_boundaries(real_mcp_server, 
         tools = {tool.name: tool for tool in await server.mcp.list_tools()}
         assert not {'create_journal', 'delete_journal', 'final_google_chat_send', 'cross_audit'} & tools.keys()
         assert tools['get_journal'].annotations.read_only_hint is True
+        assert tools['get_journal_rules'].annotations.read_only_hint is True
         assert tools['run_begin'].annotations.read_only_hint is False
         with pytest.raises(Exception, match='disabled'):
             await server.mcp.call_tool('run_resume', {'run_id': 'synthetic'})
@@ -424,3 +426,42 @@ print(json.dumps({'already_started':created['already_started'],
     with sqlite3.connect(profile.moneyforward_db_path) as conn:
         assert conn.execute('SELECT count(*) FROM accounting_runs').fetchone()[0] == 1
         assert conn.execute("SELECT count(*) FROM audit_logs WHERE event_type='portable_workflow_state'").fetchone()[0] == 1
+
+
+def test_real_sdk_native_rule_read_only_dispatch_without_provider_writes(real_mcp_server, monkeypatch):
+    """Use the REAL MCP SDK tool registry, not a synthetic decorator stub."""
+    import asyncio
+    from contextlib import contextmanager
+
+    server = real_mcp_server
+    calls = []
+
+    class Source:
+        def journal_rules(self, **kwargs):
+            calls.append(kwargs)
+            return {'journal_rules': [{'id': 'synthetic-journal-rule'}],
+                    'metadata': {'total_pages': 1, 'total_count': 1}}
+
+    @contextmanager
+    def source():
+        yield object(), Source()
+
+    monkeypatch.setattr(server, '_bound_read', source)
+
+    async def run():
+        tools = {tool.name: tool for tool in await server.mcp.list_tools()}
+        assert tools['get_journal_rules'].annotations.read_only_hint is True
+        result = await server.mcp.call_tool('get_journal_rules', {
+            'connected_account_id': 'synthetic-tenant-bank',
+            'side': 'EXPENSE', 'page': 1, 'per_page': 100,
+        })
+        assert result is not None
+        assert calls == [{
+            'connected_account_id': 'synthetic-tenant-bank',
+            'connected_sub_account_id': '', 'side': 'EXPENSE',
+            'content': '', 'content_match_type': '',
+            'page': 1, 'per_page': 100,
+        }]
+        assert 'create_journal' not in tools
+        assert 'journal_rule_create' not in tools
+    asyncio.run(run())

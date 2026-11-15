@@ -5,7 +5,7 @@ This table describes 0.1.0a2, not the private owner's production system.
 | Area | Distributed implementation | Evidence / limitation |
 | --- | --- | --- |
 | Independent company setup | Bootstrap, unconfigured profile, full Python/SQL source | Offline generated-copy tests; no initial commit needed |
-| Money Forward API transport | Existing guarded accounting/invoice/payable clients | Synthetic contract tests; own product OAuth/identity/scopes required |
+| Money Forward API transport | Existing guarded accounting/invoice/payable clients; native journal-rule **read-only** page GET | Synthetic contract tests; own product OAuth including `mfc/accounting/journal_rule.read` and office/user permission required; live rule access not certified |
 | Sales-invoice native linkage | Existing invoice/accounting probe with fail-closed page/identity validation and unconfirmed-link state | [Three-stage contract](SALES_INVOICE_NATIVE_LINK.md); synthetic complete/incomplete-page regressions, no live native-link acceptance |
 | Journal planning and classification | Existing decision, RAG/master and deterministic validation code | No bundled real journal history; no claimed accounting accuracy percentage |
 | Journal execution and read-back | Existing approval, intent, durable claim, POST and comparison functions | Synthetic pipeline acceptance; raw provider responses stay local |

@@ -339,3 +339,92 @@ def test_all_bundled_modules_import_without_credentials_or_company_configuration
     import mf_phase12
     for module in pkgutil.walk_packages(mf_phase12.__path__, prefix='mf_phase12.'):
         importlib.import_module(module.name)
+
+
+class SyntheticJournalRuleApi(Api):
+    """Authorized synthetic tenant; no live provider secrets or rule writes."""
+
+    def __init__(self, page_response=None, *, status=200):
+        super().__init__()
+        self.page_response = page_response
+        self.status = status
+
+    def request(self, method, url, **kwargs):
+        if '/journal_rules?' in url:
+            self.calls.append((method, url))
+            page = int(url.split('page=', 1)[1].split('&', 1)[0])
+            if self.status != 200:
+                return self.status, {}, b'{"error":"synthetic-access-denied"}'
+            if self.page_response is not None:
+                response = self.page_response(page)
+            else:
+                response = {'journal_rules': [{'id': 'synthetic-rule-1'}],
+                            'metadata': {'total_pages': 1, 'total_count': 1}}
+            return 200, {}, json.dumps(response).encode()
+        return super().request(method, url, **kwargs)
+
+
+def test_rule_inventory_readonly_two_pages_and_exact_company_binding(tmp_path):
+    def pages(page):
+        ids = (['synthetic-rule-1', 'synthetic-rule-2'] if page == 1
+               else ['synthetic-rule-3'])
+        return {'journal_rules': [{'id': identifier} for identifier in ids],
+                'metadata': {'total_pages': 2, 'total_count': 3}}
+    api = SyntheticJournalRuleApi(pages)
+    client, _db = bound(company(tmp_path, 'alpha'), api)
+    args = dict(connected_account_id='synthetic-bank', side='EXPENSE',
+                content='synthetic FEE', content_match_type='exact', per_page=2)
+    first = client.journal_rules(page=1, **args)
+    second = client.journal_rules(page=2, **args)
+    ids = [row['id'] for payload in (first, second) for row in payload['journal_rules']]
+    assert ids == ['synthetic-rule-1', 'synthetic-rule-2', 'synthetic-rule-3']
+    assert sum('/journal_rules?' in url for _method, url in api.calls) == 2
+    assert all(method == 'GET' for method, _url in api.calls)
+    rule_urls = [url for _method, url in api.calls if '/journal_rules?' in url]
+    assert len(rule_urls) == 2
+    assert all('content_match_type=exact' in url for url in rule_urls)
+    assert all('side=EXPENSE' in url for url in rule_urls)
+
+
+@pytest.mark.parametrize('kwargs', [
+    {'page': 0}, {'page': True}, {'per_page': 0}, {'per_page': 201},
+    {'side': 'ALL'}, {'content': 'x' * 201},
+    {'connected_account_id': 'c1', 'connected_sub_account_id': 's1'},
+    {'content_match_type': 'unknown', 'content': 'FEE'},
+    {'content_match_type': 'exact'},
+])
+def test_rule_inventory_rejects_invalid_query_before_provider(tmp_path, kwargs):
+    api = SyntheticJournalRuleApi()
+    client, _db = bound(company(tmp_path, 'alpha'), api)
+    count = len(api.calls)
+    with pytest.raises(ValueError, match='journal rules'):
+        client.journal_rules(**kwargs)
+    assert len(api.calls) == count
+
+
+@pytest.mark.parametrize('response', [
+    {}, {'journal_rules': [], 'metadata': {}},
+    {'journal_rules': [{'id': 'r'}], 'metadata': {'total_pages': 1, 'total_count': 2}},
+    {'journal_rules': [{'id': 'r'}, {'id': 'r'}], 'metadata': {'total_pages': 1, 'total_count': 2}},
+    {'journal_rules': [{'name': 'no identity'}], 'metadata': {'total_pages': 1, 'total_count': 1}},
+    {'journal_rules': ['invalid'], 'metadata': {'total_pages': 1, 'total_count': 1}},
+    {'journal_rules': [{'id': 'r'}], 'metadata': {'total_pages': True, 'total_count': 1}},
+    {'journal_rules': [], 'metadata': {'total_pages': 2, 'total_count': 5}},
+    {'journal_rules': [{'id': 'r'}], 'metadata': {'total_pages': 0, 'total_count': 1}},
+])
+def test_rule_inventory_invalid_coverage_fails_closed(tmp_path, response):
+    api = SyntheticJournalRuleApi(lambda _page: response)
+    client, _db = bound(company(tmp_path, 'alpha'), api)
+    with pytest.raises(RuntimeError, match='journal rules'):
+        client.journal_rules()
+    assert all(method == 'GET' for method, _url in api.calls)
+
+
+def test_rule_inventory_missing_scope_is_explicit_and_does_not_fallback(tmp_path):
+    api = SyntheticJournalRuleApi(status=403)
+    client, _db = bound(company(tmp_path, 'alpha'), api)
+    with pytest.raises(PermissionError, match='OAuth.*journal_rule.read'):
+        client.journal_rules()
+    assert len(api.calls) == 3  # one rules GET after office/DB binding
+    assert all(method == 'GET' for method, _url in api.calls)
+    assert api.calls[-1][1].endswith('/journal_rules?page=1&per_page=100')

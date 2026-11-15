@@ -218,6 +218,22 @@ def get_journals(start_date: str, end_date: str, page: int = 1,
 
 
 @mcp.tool(annotations=RO)
+def get_journal_rules(
+    connected_account_id: str = "", connected_sub_account_id: str = "",
+    side: str = "", content: str = "", content_match_type: str = "",
+    page: int = 1, per_page: int = 100,
+) -> dict[str, Any]:
+    """Official rule inventory only; cannot create/update/delete or auto-register."""
+    with _bound_read() as (_profile, client):
+        return client.journal_rules(
+            connected_account_id=connected_account_id,
+            connected_sub_account_id=connected_sub_account_id,
+            side=side, content=content, content_match_type=content_match_type,
+            page=page, per_page=per_page,
+        )
+
+
+@mcp.tool(annotations=RO)
 def get_journal(journal_id: str) -> dict[str, Any]:
     if not journal_id or len(journal_id) > 150:
         raise ValueError("journal_id is required")

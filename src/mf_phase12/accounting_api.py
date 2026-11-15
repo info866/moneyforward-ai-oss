@@ -38,6 +38,7 @@ PHASE12_READ_ONLY_SCOPES = (
     "mfc/accounting/departments.read",
     "mfc/accounting/taxes.read",
     "mfc/accounting/journal.read",
+    "mfc/accounting/journal_rule.read",
     "mfc/accounting/report.read",
     "mfc/accounting/trade_partners.read",
     "mfc/accounting/connected_account.read",
@@ -951,6 +952,78 @@ class MoneyForwardAccountingClient:
 
     def connected_accounts(self, office_id: str | None = None) -> dict[str, Any]:
         return self._get_json(self._path("connected_accounts", office_id))
+
+    def journal_rules(
+        self,
+        office_id: str | None = None,
+        *,
+        connected_account_id: str = "",
+        connected_sub_account_id: str = "",
+        side: str = "",
+        content: str = "",
+        content_match_type: str = "",
+        page: int = 1,
+        per_page: int = 100,
+    ) -> dict[str, Any]:
+        """Read one validated page of official native rules; never alter rules.
+
+        Requires mfc/accounting/journal_rule.read in the *existing* OAuth token.
+        Consumers must enumerate pages and compare total_count/identity before
+        treating any company rule inventory as complete.
+        """
+        if connected_account_id and connected_sub_account_id:
+            raise ValueError("journal rules account filters cannot coexist")
+        if side not in ("", "INCOME", "EXPENSE"):
+            raise ValueError("journal rules side invalid")
+        if not isinstance(content, str) or len(content) > 200:
+            raise ValueError("journal rules content invalid")
+        if content_match_type and (not content or content_match_type not in
+                                   ("exact", "partial", "forward", "backward")):
+            raise ValueError("journal rules content match type invalid")
+        if type(page) is not int or page < 1 or type(per_page) is not int or not 1 <= per_page <= 200:
+            raise ValueError("journal rules pagination invalid")
+        filters = {
+            "connected_account_id": connected_account_id,
+            "connected_sub_account_id": connected_sub_account_id,
+            "side": side,
+            "content": content,
+            "content_match_type": content_match_type,
+            "page": page,
+            "per_page": per_page,
+        }
+        query = urllib.parse.urlencode({k: v for k, v in filters.items() if v != ""})
+        try:
+            payload = self._get_json(f"{self._path('journal_rules', office_id)}?{query}")
+        except RuntimeError as error:
+            if "HTTP 403" in str(error):
+                raise PermissionError(
+                    "official journal rules read is forbidden; check the existing OAuth "
+                    "journal_rule.read scope and the user/office authorization"
+                ) from error
+            raise
+        if not isinstance(payload, dict) or not isinstance(payload.get("journal_rules"), list):
+            raise RuntimeError("official journal rules response is malformed")
+        rows = payload["journal_rules"]
+        meta = payload.get("metadata")
+        if not isinstance(meta, dict):
+            raise RuntimeError("official journal rules pagination metadata missing")
+        pages, count = meta.get("total_pages"), meta.get("total_count")
+        if (type(pages) is not int or type(count) is not int or pages < 0 or count < 0
+                or (pages == 0) != (count == 0) or (pages > 0 and page > pages)
+                or len(rows) > per_page or len(rows) > count):
+            raise RuntimeError("official journal rules pagination invalid")
+        identity_set: set[str] = set()
+        for row in rows:
+            if not isinstance(row, dict):
+                raise RuntimeError("official journal rules row invalid")
+            identity = str(row.get("id") or "")
+            if not identity or identity in identity_set:
+                raise RuntimeError("official journal rules identity missing or duplicate")
+            identity_set.add(identity)
+        if ((count == 0 and rows) or (count > 0 and not rows) or
+                (pages <= 1 and len(rows) != count)):
+            raise RuntimeError("official journal rules inventory incomplete")
+        return payload
 
     def transactions(
         self,
